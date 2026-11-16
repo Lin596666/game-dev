@@ -3,6 +3,7 @@
     <input class="name" value="{{name}}" placeholder="给作品起个名字" bindinput="onNameInput" confirm-type="done" />
     <text class="size">{{sizeText}}</text>
     <view class="act" bindtap="saveNow">保存</view>
+    <view class="act" bindtap="copyList">清单</view>
     <view class="act" bindtap="exportImage">导出</view>
   </view>
 

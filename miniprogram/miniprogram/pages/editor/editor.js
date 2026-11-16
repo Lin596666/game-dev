@@ -12,7 +12,10 @@ Page({
       { id: 'pen', label: '画笔' },
       { id: 'eraser', label: '橡皮' },
       { id: 'bucket', label: '油漆桶' },
-      { id: 'picker', label: '吸管' }
+      { id: 'picker', label: '吸管' },
+      { id: 'line', label: '直线' },
+      { id: 'rect', label: '矩形' },
+      { id: 'ellipse', label: '椭圆' }
     ],
     sets: core.COLOR_SETS,
     setIndex: 0,
@@ -422,6 +425,26 @@ Page({
     const tool = this.data.tool
     const color = this.data.colorId
 
+    // 形状：第一次点定起点，第二次点定终点（小程序不做拖拽预览，省一点性能）
+    if (tool === 'line' || tool === 'rect' || tool === 'ellipse') {
+      if (!isStart) return
+      if (!this.shapeFrom) {
+        this.shapeFrom = { x: cell.x, y: cell.y }
+        wx.showToast({ title: '再点一下定另一端', icon: 'none' })
+        return
+      }
+      const a = this.shapeFrom
+      this.shapeFrom = null
+      this.strokeSnapshot = this.grid.snapshot()
+      if (tool === 'line') this.grid.line(a.x, a.y, cell.x, cell.y, color, 1)
+      else if (tool === 'rect') this.grid.rect(a.x, a.y, cell.x, cell.y, color, false, 1)
+      else this.grid.ellipse(a.x, a.y, cell.x, cell.y, color, false, 1)
+      this.pushShapePatch()
+      this.redraw()
+      this.updateStats()
+      return
+    }
+
     if (tool === 'picker') {
       const v = this.grid.data[cell.y * this.grid.width + cell.x]
       if (v) this.setData({ colorId: v })
@@ -444,6 +467,14 @@ Page({
     }
     this.lastCell = cell
     this.redraw()
+  },
+
+  pushShapePatch() {
+    if (!this.strokeSnapshot) return
+    const after = this.grid.snapshot()
+    const patch = core.diffSnapshot(this.strokeSnapshot, after, this.grid.width, this.grid.height)
+    this.strokeSnapshot = null
+    if (patch) this.undo.push(patch)
   },
 
   commitStroke() {
@@ -489,6 +520,14 @@ Page({
   saveNow() {
     this.persist()
     wx.showToast({ title: '已保存到本机', icon: 'success' })
+  },
+
+  copyList() {
+    const text = core.instructionText(this.grid, this.data.name || '拼豆图纸')
+    wx.setClipboardData({
+      data: text,
+      success: () => wx.showToast({ title: '色号清单已复制', icon: 'success' })
+    })
   },
 
   exportImage() {
