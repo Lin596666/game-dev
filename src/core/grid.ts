@@ -279,6 +279,18 @@ export class BeadGrid {
     this.version++
   }
 
+  /** 顺时针旋转 90°：宽高互换，返回新网格（原网格不动） */
+  rotated90(): BeadGrid {
+    const g = new BeadGrid(this.height, this.width)
+    for (let y = 0; y < this.height; y++) {
+      for (let x = 0; x < this.width; x++) {
+        g.data[x * g.width + (this.height - 1 - y)] = this.data[y * this.width + x]!
+      }
+    }
+    g.version++
+    return g
+  }
+
   /** 裁切（用于「按内容裁切」） */
   trimmed(): BeadGrid {
     let minX = this.width

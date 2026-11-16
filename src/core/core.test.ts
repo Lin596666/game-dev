@@ -3,7 +3,9 @@ import { COLORS } from './colors'
 import { BeadGrid, EMPTY } from './grid'
 import { UndoStack, diffSnapshot } from './history'
 import { LIBRARY } from './library'
+import { fitToColorSet } from './palette'
 import { colorUsage, instructionText, totalBeads } from './pattern'
+import { gridPhysicalInfo, physicalInfo, printLayout } from './physical'
 import { createProjectFile, parseProjectFile, parseProjectText } from './project'
 
 describe('BeadGrid', () => {
@@ -151,4 +153,69 @@ describe('内置图纸库', () => {
       }
     })
   }
+})
+
+describe('实物尺寸与打印排版', () => {
+  it('29×29 是 14.5cm、一块豆板、一页纸', () => {
+    const info = physicalInfo(29, 29)
+    expect(info.widthCm).toBe(14.5)
+    expect(info.heightCm).toBe(14.5)
+    expect(info.boards).toBe(1)
+    expect(info.pages).toBe(1)
+  })
+
+  it('58×29 需要两块豆板', () => {
+    const info = physicalInfo(58, 29)
+    expect(info.boardsX).toBe(2)
+    expect(info.boardsY).toBe(1)
+    expect(info.boards).toBe(2)
+  })
+
+  it('96×96 打印 12 页', () => {
+    const layout = printLayout(96, 96)
+    expect(layout.cols).toBe(31)
+    expect(layout.rows).toBe(46)
+    expect(layout.pages).toBe(12)
+  })
+
+  it('空网格也能算出合理值', () => {
+    const g = new BeadGrid(1, 1)
+    expect(gridPhysicalInfo(g).boards).toBe(1)
+  })
+})
+
+describe('换色卡吸附', () => {
+  it('吸附后所有格子都来自目标色卡', () => {
+    const g = new BeadGrid(6, 4)
+    const basicOnly = COLORS.filter((c) => c.set === 'basic')
+    const candy = new Set(COLORS.filter((c) => c.set === 'candy').map((c) => c.id))
+    for (let i = 0; i < g.data.length; i++) g.data[i] = basicOnly[i % basicOnly.length]!.id
+    const res = fitToColorSet(g, 'candy')
+    expect(res.colorsAfter).toBeGreaterThan(0)
+    for (let i = 0; i < g.data.length; i++) {
+      expect(candy.has(g.data[i]!)).toBe(true)
+    }
+  })
+
+  it('同一种原色只换成同一种新色', () => {
+    const g = new BeadGrid(6, 2)
+    const src = COLORS.filter((c) => c.set === 'basic')[3]!.id
+    for (let i = 0; i < g.data.length; i++) g.data[i] = src
+    fitToColorSet(g, 'nature')
+    const uniq = new Set(Array.from(g.data))
+    expect(uniq.size).toBe(1)
+  })
+})
+
+describe('旋转 90°', () => {
+  it('宽高互换且位置正确', () => {
+    const g = new BeadGrid(3, 2)
+    g.set(0, 0, 1)
+    g.set(2, 1, 2)
+    const r = g.rotated90()
+    expect(r.width).toBe(2)
+    expect(r.height).toBe(3)
+    expect(r.get(1, 0)).toBe(1)
+    expect(r.get(0, 2)).toBe(2)
+  })
 })

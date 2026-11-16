@@ -29,6 +29,19 @@ function onGuideColor(e: Event): void {
 }
 
 const pct = computed(() => Math.round(store.progress * 100))
+
+// 换色卡：把整张图纸的配色吸附到用户实际买的那套豆子上
+const fitSet = ref<ColorSetId>('morandi')
+const fitMsg = ref('')
+
+function applyFit(): void {
+  const res = store.fitPalette(fitSet.value)
+  if (res.changed === 0) {
+    fitMsg.value = '这张图纸已经在用这套色卡了，不用换。'
+  } else {
+    fitMsg.value = `换了 ${res.changed} 颗，现在一共 ${res.colorsAfter} 种颜色。`
+  }
+}
 </script>
 
 <template>
@@ -137,9 +150,48 @@ const pct = computed(() => Math.round(store.progress * 100))
           <button class="btn sm" @click="store.transform('flipX')">左右翻转</button>
           <button class="btn sm" @click="store.transform('flipY')">上下翻转</button>
           <button class="btn sm" @click="store.transform('rotate180')">旋转 180°</button>
+          <button class="btn sm" @click="store.rotate90()">旋转 90°</button>
           <button class="btn sm" @click="store.trim()">裁掉空白</button>
           <button class="btn sm danger" @click="store.clearAll()">清空画布</button>
         </div>
+        <p class="hint" style="margin: 8px 0 0">旋转 90° 会交换宽高，跟拼进度会跟着重置。</p>
+      </div>
+
+      <div class="panel-section">
+        <div class="panel-head">
+          <span class="panel-title">成品尺寸</span>
+          <span class="panel-sub">5mm 豆</span>
+        </div>
+        <div class="stat-row">
+          <span>成品约</span>
+          <b>{{ store.physical.widthCm }} × {{ store.physical.heightCm }} cm</b>
+        </div>
+        <div class="stat-row">
+          <span>需要豆板</span>
+          <b>{{ store.physical.boards }} 块（29×29）</b>
+        </div>
+        <div class="stat-row">
+          <span>A4 打印</span>
+          <b>{{ store.physical.pages }} 页</b>
+        </div>
+        <p class="hint" style="margin: 8px 0 0">
+          每页 {{ store.physical.cols }} × {{ store.physical.rows }} 格，按 6mm 一格排版；豆板数按 29×29 标准板估算。
+        </p>
+      </div>
+
+      <div class="panel-section">
+        <div class="panel-head">
+          <span class="panel-title">换成我的色卡</span>
+        </div>
+        <select class="select" v-model="fitSet">
+          <option v-for="s in COLOR_SETS" :key="s.id" :value="s.id">{{ s.label }} · {{ s.desc }}</option>
+        </select>
+        <div style="margin-top: 10px">
+          <button class="btn sm" @click="applyFit">吸附到这套色卡</button>
+        </div>
+        <p class="hint" style="margin: 8px 0 0">
+          {{ fitMsg || '把整张图纸用到的颜色统一换算成这套色卡里最接近的豆子色，同一种原色永远换成同一种新色。' }}
+        </p>
       </div>
 
       <div class="panel-section grow">

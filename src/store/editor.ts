@@ -1,9 +1,11 @@
 import { defineStore } from 'pinia'
 import { computed, ref, shallowRef } from 'vue'
-import { COLORS, colorById, type BeadColor } from '@/core/colors'
+import { COLORS, colorById, type BeadColor, type ColorSetId } from '@/core/colors'
 import { BeadGrid, EMPTY } from '@/core/grid'
 import { UndoStack, diffSnapshot } from '@/core/history'
+import { fitToColorSet, type FitResult } from '@/core/palette'
 import { colorUsage, estimateCost } from '@/core/pattern'
+import { gridPhysicalInfo } from '@/core/physical'
 import { createProjectFile, parseProjectFile, type ParsedProject } from '@/core/project'
 import { renderThumbnail } from '@/renderer/export'
 import {
@@ -96,6 +98,8 @@ export const useEditorStore = defineStore('editor', () => {
     return grid.value.usedCount()
   })
   const cost = computed(() => estimateCost(total.value, pricePerBead.value))
+  /** 成品尺寸、豆板数、打印页数（跟实物有关，不跟颜色用量有关） */
+  const physical = computed(() => gridPhysicalInfo(grid.value))
   const canUndo = computed(() => {
     void historyVersion.value
     return undoStack.canUndo
@@ -409,6 +413,19 @@ export const useEditorStore = defineStore('editor', () => {
     endStroke()
   }
 
+  /** 顺时针旋转 90°（宽高互换，属于文档级操作，会清掉跟拼进度） */
+  function rotate90(): void {
+    loadGrid(grid.value.rotated90(), { keepName: true })
+  }
+
+  /** 把整张图纸的配色吸附到某套色卡，返回换了哪些色 */
+  function fitPalette(set: ColorSetId): FitResult {
+    beginStroke()
+    const res = fitToColorSet(grid.value, set)
+    endStroke()
+    return res
+  }
+
   /** 裁掉四周空白，并把网格尺寸缩到内容大小 */
   function trim(): void {
     const t = grid.value.trimmed()
@@ -610,6 +627,7 @@ export const useEditorStore = defineStore('editor', () => {
     usage,
     total,
     cost,
+    physical,
     canUndo,
     canRedo,
     currentColor,
@@ -628,6 +646,8 @@ export const useEditorStore = defineStore('editor', () => {
     redo,
     replaceColor,
     transform,
+    rotate90,
+    fitPalette,
     clearAll,
     fillAll,
     trim,
