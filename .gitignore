@@ -87,3 +87,4 @@ src-tauri/target/
 src-tauri/gen/
 # 打包图标由 `npm run tauri:icon` 生成
 src-tauri/icons/
+.patch/
