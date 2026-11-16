@@ -18,6 +18,7 @@ const srcName = ref('')
 const targetWidth = ref(48)
 const maxColors = ref(0)
 const dither = ref(false)
+const stripBg = ref(false)
 const colorSet = ref<ColorSetId | 'all'>('all')
 
 const preview = ref('')
@@ -78,7 +79,9 @@ function compute(): void {
       targetHeight: Math.min(160, h),
       set: colorSet.value === 'all' ? undefined : colorSet.value,
       maxColors: maxColors.value,
-      dither: dither.value
+      dither: dither.value,
+      stripBackground: stripBg.value,
+      bgTolerance: 14
     })
     result.value = { width: w, height: Math.min(160, h), data: res.data }
     const grid = new BeadGrid(w, Math.min(160, h), res.data)
@@ -91,7 +94,7 @@ function compute(): void {
   }
 }
 
-watch([source, targetWidth, maxColors, dither, colorSet], compute)
+watch([source, targetWidth, maxColors, dither, colorSet, stripBg], compute)
 
 function apply(): void {
   const r = result.value
@@ -137,6 +140,10 @@ function apply(): void {
         <label class="usage-item" style="cursor: pointer" @click.prevent="dither = !dither">
           <input type="checkbox" :checked="dither" />
           抖动（细节更多，但噪点也更碎）
+        </label>
+        <label class="usage-item" style="cursor: pointer" @click.prevent="stripBg = !stripBg">
+          <input type="checkbox" :checked="stripBg" />
+          去掉背景（拍成品照片时，白底/桌面会被留空）
         </label>
         <p v-if="error" class="hint" style="color: #a63b2b">{{ error }}</p>
         <p v-if="srcName" class="hint" style="margin-top: 8px">来源：{{ srcName }}</p>

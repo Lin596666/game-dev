@@ -18,6 +18,10 @@ export interface QuantizeOptions {
   dither?: boolean
   /** 透明度阈值，低于此值视为空位 */
   alphaThreshold?: number
+  /** 去掉单色背景（从四边取平均色，颜色接近的格子留空），拍成品照转图纸时很有用 */
+  stripBackground?: boolean
+  /** 背景判定阈值（CIELAB 距离），越大去掉得越多，默认 12 */
+  bgTolerance?: number
 }
 
 export interface QuantizeResult {
@@ -85,6 +89,33 @@ export function sampleImage(
   return { width: tw, height: th, r, g, b, a }
 }
 
+/** 取四条边的采样平均值当"背景色"，比只取四个角稳 */
+function borderColor(s: Sampled): [number, number, number] {
+  let r = 0
+  let g = 0
+  let b = 0
+  let n = 0
+  const w = s.width
+  const h = s.height
+  const push = (i: number) => {
+    if (s.a[i]! < 0.2) return
+    r += s.r[i]!
+    g += s.g[i]!
+    b += s.b[i]!
+    n++
+  }
+  for (let x = 0; x < w; x++) {
+    push(x)
+    push((h - 1) * w + x)
+  }
+  for (let y = 0; y < h; y++) {
+    push(y * w)
+    push(y * w + (w - 1))
+  }
+  if (!n) return [255, 255, 255]
+  return [r / n, g / n, b / n]
+}
+
 function candidatesFor(set?: ColorSetId): BeadColor[] {
   return set ? COLORS.filter((c) => c.set === set) : COLORS
 }
@@ -112,13 +143,28 @@ export function quantizeImage(
   const alphaThreshold = options.alphaThreshold ?? 0.35
   const s = sampleImage(source, tw, th)
 
+  // 背景剔除：把和四边平均色接近的格子直接留空
+  const blank = new Uint8Array(tw * th)
+  if (options.stripBackground) {
+    const [br, bg2, bb] = borderColor(s)
+    const bgLab = rgbToLab(br, bg2, bb)
+    const tol = options.bgTolerance ?? 12
+    for (let i = 0; i < tw * th; i++) {
+      if (s.a[i]! < alphaThreshold) {
+        blank[i] = 1
+        continue
+      }
+      if (deltaE(rgbToLab(s.r[i]!, s.g[i]!, s.b[i]!), bgLab) < tol) blank[i] = 1
+    }
+  }
+
   let pool = candidatesFor(options.set)
 
   // 第一遍：统计每个色号被匹配的次数，用于「限制色数」
   const usage = new Map<number, number>()
   const firstPass = new Uint16Array(tw * th)
   for (let i = 0; i < tw * th; i++) {
-    if (s.a[i]! < alphaThreshold) continue
+    if (s.a[i]! < alphaThreshold || blank[i]) continue
     const c = nearest(s.r[i]!, s.g[i]!, s.b[i]!, pool)
     firstPass[i] = c.id
     usage.set(c.id, (usage.get(c.id) ?? 0) + 1)
@@ -139,7 +185,7 @@ export function quantizeImage(
 
   if (!options.dither) {
     for (let i = 0; i < tw * th; i++) {
-      if (s.a[i]! < alphaThreshold) {
+      if (s.a[i]! < alphaThreshold || blank[i]) {
         out[i] = EMPTY
         continue
       }
@@ -156,7 +202,7 @@ export function quantizeImage(
     const distribute = (x: number, y: number, er: number, eg: number, eb: number) => {
       if (x < 0 || x >= tw || y < 0 || y >= th) return
       const i = y * tw + x
-      if (s.a[i]! < alphaThreshold) return
+      if (s.a[i]! < alphaThreshold || blank[i]) return
       errR[i] += er
       errG[i] += eg
       errB[i] += eb
@@ -165,7 +211,7 @@ export function quantizeImage(
     for (let y = 0; y < th; y++) {
       for (let x = 0; x < tw; x++) {
         const i = y * tw + x
-        if (s.a[i]! < alphaThreshold) {
+        if (s.a[i]! < alphaThreshold || blank[i]) {
           out[i] = EMPTY
           continue
         }

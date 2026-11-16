@@ -3,6 +3,7 @@ import { COLORS } from './colors'
 import { BeadGrid, EMPTY } from './grid'
 import { UndoStack, diffSnapshot } from './history'
 import { LIBRARY } from './library'
+import { quantizeImage } from './quantize'
 import { fitToColorSet, fitToColors } from './palette'
 import { colorUsage, instructionText, totalBeads } from './pattern'
 import { gridPhysicalInfo, physicalInfo, printLayout } from './physical'
@@ -457,5 +458,41 @@ describe('重设画布尺寸', () => {
     const next = new BeadGrid(4, 4)
     next.blitRect(0, 0, copyW, copyH, region)
     expect(next.usedCount()).toBe(0)
+  })
+})
+
+describe('图片转图纸：去掉背景', () => {
+  function photo(): { data: Uint8ClampedArray; width: number; height: number } {
+    const w = 40
+    const h = 40
+    const data = new Uint8ClampedArray(w * h * 4)
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = (y * w + x) * 4
+        const inside = x >= 14 && x < 26 && y >= 14 && y < 26
+        data[i] = inside ? 214 : 250
+        data[i + 1] = inside ? 60 : 249
+        data[i + 2] = inside ? 74 : 246
+        data[i + 3] = 255
+      }
+    }
+    return { data, width: w, height: h }
+  }
+
+  it('白底会被留空，主体保留', () => {
+    const res = quantizeImage(photo(), {
+      targetWidth: 10,
+      targetHeight: 10,
+      stripBackground: true,
+      bgTolerance: 12
+    })
+    expect(res.data[0]).toBe(EMPTY)
+    expect(res.data[9]).toBe(EMPTY)
+    expect(res.data[5 * 10 + 5]).toBeGreaterThan(0)
+  })
+
+  it('不开这个选项时同样位置不会被留空', () => {
+    const res = quantizeImage(photo(), { targetWidth: 10, targetHeight: 10 })
+    expect(res.data[0]).toBeGreaterThan(0)
   })
 })
