@@ -2,6 +2,7 @@
 import { defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { BeadGrid } from '@/core/grid'
 import { LIBRARY } from '@/core/library'
+import { fitToColors } from '@/core/palette'
 import { decodeShare, shareCodeFromUrl } from '@/core/share'
 import { useEditorStore, type ToolId } from '@/store/editor'
 import TopBar from './components/TopBar.vue'
@@ -80,9 +81,15 @@ async function openProject(id: string): Promise<void> {
 
 function applyImport(payload: { width: number; height: number; data: Uint16Array }): void {
   const grid = new BeadGrid(payload.width, payload.height, payload.data)
+  let note = ''
+  // 用户标了"我有的色号"就顺手把图换成买得到的颜色，省得拼一半发现缺色
+  if (store.hasOwnedList) {
+    const res = fitToColors(grid, store.ownedColors)
+    if (res.changed > 0) note = `，${res.changed} 格换成了你有的色号`
+  }
   store.loadGrid(grid, { newId: true, keepName: true })
   showImport.value = false
-  toast(`已转换 ${payload.width}×${payload.height} 图纸`)
+  toast(`已转换 ${payload.width}×${payload.height} 图纸${note}`)
 }
 
 function onKey(e: KeyboardEvent): void {

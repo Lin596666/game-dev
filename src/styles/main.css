@@ -1356,9 +1356,26 @@ canvas,
   }
 }
 
+/* ---------- 我有的色号 ---------- */
+.swatch.missing {
+  opacity: 0.32;
+  filter: grayscale(1);
+  box-shadow: none;
+}
+
+.link-btn {
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--clay);
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 /* ---------- 分享码 ---------- */
-.share-row {
-  display: flex;
+.share-row {  display: flex;
   gap: 8px;
   align-items: center;
 }

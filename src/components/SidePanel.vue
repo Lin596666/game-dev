@@ -11,7 +11,13 @@ const tab = ref<'color' | 'canvas' | 'guide'>('color')
 const activeSet = ref<ColorSetId>('basic')
 
 const groups = groupedColors()
-const swatches = computed(() => groups.find((g) => g.set.id === activeSet.value)?.colors ?? [])
+const swatches = computed(() => {
+  const all = groups.find((g) => g.set.id === activeSet.value)?.colors ?? []
+  return store.onlyOwned ? all.filter((c) => store.isOwned(c.id)) : all
+})
+
+/** 编辑"我有哪些色号"时，点色块是切换拥有状态，而不是选色 */
+const manageOwned = ref(false)
 
 const symmetries: Array<{ id: Symmetry; label: string }> = [
   { id: 'none', label: '无' },
@@ -42,6 +48,15 @@ function applyFit(): void {
     fitMsg.value = '这张图纸已经在用这套色卡了，不用换。'
   } else {
     fitMsg.value = `换了 ${res.changed} 颗，现在一共 ${res.colorsAfter} 种颜色。`
+  }
+}
+
+function applyFitOwned(): void {
+  const res = store.fitOwned()
+  if (res.changed === 0) {
+    fitMsg.value = '这张图纸用的色号你都有，不用换。'
+  } else {
+    fitMsg.value = `换了 ${res.changed} 颗，现在一共 ${res.colorsAfter} 种颜色，都是你有的。`
   }
 }
 </script>
@@ -79,17 +94,36 @@ function applyFit(): void {
         <p class="hint" style="margin: 8px 0 10px">
           {{ groups.find((g) => g.set.id === activeSet)?.set.desc }}
         </p>
+
+        <div class="panel-head" style="margin-bottom: 4px">
+          <span class="panel-title">我的豆子</span>
+          <span class="panel-sub">{{ store.ownedSummary }}</span>
+        </div>
+        <label class="usage-item" style="cursor: pointer" @click.prevent="store.onlyOwned = !store.onlyOwned">
+          <input type="checkbox" :checked="store.onlyOwned" /> 只显示我有的颜色
+        </label>
+        <label class="usage-item" style="cursor: pointer" @click.prevent="manageOwned = !manageOwned">
+          <input type="checkbox" :checked="manageOwned" /> 编辑我有哪些色号（点色块切换）
+        </label>
+        <p v-if="manageOwned" class="hint" style="margin: 4px 0 8px">
+          点一下色块表示「这色我有 / 没有」，清单只存在本机。全部有就
+          <button class="link-btn" @click="store.ownAll()">重置为全都有</button>
+        </p>
+
         <div class="swatch-grid">
           <button
             v-for="c in swatches"
             :key="c.id"
             class="swatch"
-            :class="{ on: store.colorId === c.id }"
+            :class="{ on: store.colorId === c.id, missing: manageOwned && !store.isOwned(c.id) }"
             :style="{ background: c.hex }"
-            :title="`${c.code} ${c.name}`"
-            @click="store.colorId = c.id"
+            :title="`${c.code} ${c.name}${manageOwned ? (store.isOwned(c.id) ? '（有）' : '（没有）') : ''}`"
+            @click="manageOwned ? store.toggleOwned(c.id) : (store.colorId = c.id)"
           />
         </div>
+        <p v-if="store.onlyOwned && swatches.length === 0" class="hint">
+          这一组里你一个都没有，换个色卡看看，或关掉「只显示我有的颜色」。
+        </p>
       </div>
     </template>
 
@@ -192,11 +226,19 @@ function applyFit(): void {
         <select class="select" v-model="fitSet">
           <option v-for="s in COLOR_SETS" :key="s.id" :value="s.id">{{ s.label }} · {{ s.desc }}</option>
         </select>
-        <div style="margin-top: 10px">
+        <div style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap">
           <button class="btn sm" @click="applyFit">吸附到这套色卡</button>
+          <button class="btn sm" :disabled="!store.hasOwnedList" @click="applyFitOwned">
+            只留我有的色号
+          </button>
         </div>
         <p class="hint" style="margin: 8px 0 0">
-          {{ fitMsg || '把整张图纸用到的颜色统一换算成这套色卡里最接近的豆子色，同一种原色永远换成同一种新色。' }}
+          {{
+            fitMsg ||
+            (store.hasOwnedList
+              ? '把整张图纸用到的颜色统一换算成这套色卡里最接近的豆子色，同一种原色永远换成同一种新色。'
+              : '把整张图纸用到的颜色统一换算成这套色卡里最接近的豆子色，同一种原色永远换成同一种新色。先在「颜色」里标出你有哪些色号，就能只换成手头买得到的。')
+          }}
         </p>
       </div>
 

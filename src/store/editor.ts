@@ -3,7 +3,7 @@ import { computed, ref, shallowRef } from 'vue'
 import { COLORS, colorById, type BeadColor, type ColorSetId } from '@/core/colors'
 import { BeadGrid, EMPTY } from '@/core/grid'
 import { UndoStack, diffSnapshot } from '@/core/history'
-import { fitToColorSet, type FitResult } from '@/core/palette'
+import { fitToColorSet, fitToColors, type FitResult } from '@/core/palette'
 import { colorUsage, estimateCost } from '@/core/pattern'
 import { gridPhysicalInfo } from '@/core/physical'
 import { stockReport, type StockMap } from '@/core/stock'
@@ -591,8 +591,74 @@ export const useEditorStore = defineStore('editor', () => {
     return res
   }
 
-  /** 裁掉四周空白，并把网格尺寸缩到内容大小 */
-  function trim(): void {
+  // ---------- 我有的色号：只显示手头买得到的颜色 ----------
+  const OWNED_KEY = 'bead:owned'
+  /** null 表示"全都有"，不用维护清单 */
+  const ownedIds = ref<number[] | null>(loadOwned())
+  const onlyOwned = ref(false)
+
+  function loadOwned(): number[] | null {
+    try {
+      const raw = localStorage.getItem(OWNED_KEY)
+      if (!raw) return null
+      const parsed = JSON.parse(raw) as unknown
+      if (!Array.isArray(parsed)) return null
+      const list = parsed.filter((v): v is number => typeof v === 'number' && v > 0)
+      return list.length > 0 ? list : null
+    } catch {
+      return null
+    }
+  }
+
+  function saveOwned(list: number[] | null): void {
+    try {
+      if (list === null) localStorage.removeItem(OWNED_KEY)
+      else localStorage.setItem(OWNED_KEY, JSON.stringify(list))
+    } catch {
+      /* 存不了也不影响这次编辑 */
+    }
+  }
+
+  const hasOwnedList = computed(() => ownedIds.value !== null)
+
+  /** 编辑时真正可用的色号（没有清单就是全部） */
+  const ownedColors = computed<BeadColor[]>(() => {
+    const list = ownedIds.value
+    if (list === null) return COLORS
+    const set = new Set(list)
+    return COLORS.filter((c) => set.has(c.id))
+  })
+
+  const ownedSummary = computed(() => `${ownedColors.value.length} / ${COLORS.length} 色`)
+
+  function isOwned(id: number): boolean {
+    const list = ownedIds.value
+    return list === null || list.includes(id)
+  }
+
+  function toggleOwned(id: number): void {
+    const set = new Set(ownedIds.value ?? COLORS.map((c) => c.id))
+    if (set.has(id)) set.delete(id)
+    else set.add(id)
+    const next = [...set].sort((a, b) => a - b)
+    ownedIds.value = next.length > 0 ? next : null
+    saveOwned(ownedIds.value)
+  }
+
+  function ownAll(): void {
+    ownedIds.value = null
+    saveOwned(null)
+  }
+
+  /** 把整张图换成"我有的色号"里最接近的颜色 */
+  function fitOwned(): FitResult {
+    beginStroke()
+    const res = fitToColors(grid.value, ownedColors.value)
+    endStroke()
+    return res
+  }
+
+  /** 裁掉四周空白，并把网格尺寸缩到内容大小 */  function trim(): void {
     const t = grid.value.trimmed()
     if (t.width === grid.value.width && t.height === grid.value.height) return
     loadGrid(t, { keepName: true })
@@ -834,6 +900,15 @@ export const useEditorStore = defineStore('editor', () => {
     transform,
     rotate90,
     fitPalette,
+    ownedIds,
+    onlyOwned,
+    hasOwnedList,
+    ownedColors,
+    ownedSummary,
+    isOwned,
+    toggleOwned,
+    ownAll,
+    fitOwned,
     clearAll,
     fillAll,
     trim,

@@ -3,7 +3,7 @@ import { COLORS } from './colors'
 import { BeadGrid, EMPTY } from './grid'
 import { UndoStack, diffSnapshot } from './history'
 import { LIBRARY } from './library'
-import { fitToColorSet } from './palette'
+import { fitToColorSet, fitToColors } from './palette'
 import { colorUsage, instructionText, totalBeads } from './pattern'
 import { gridPhysicalInfo, physicalInfo, printLayout } from './physical'
 import { planPrint } from './print'
@@ -208,6 +208,20 @@ describe('换色卡吸附', () => {
     fitToColorSet(g, 'nature')
     const uniq = new Set(Array.from(g.data))
     expect(uniq.size).toBe(1)
+  })
+
+  it('只换成"我有的色号"里最接近的颜色', () => {
+    const g = new BeadGrid(5, 1)
+    const a = COLORS[0]!
+    const b = COLORS[7]!
+    const owned = [COLORS[20]!, COLORS[40]!]
+    for (let i = 0; i < g.data.length; i++) g.data[i] = i % 2 === 0 ? a.id : b.id
+    const res = fitToColors(g, owned)
+    expect(res.changed).toBeGreaterThan(0)
+    const allowed = new Set(owned.map((c) => c.id))
+    for (let i = 0; i < g.data.length; i++) {
+      expect(allowed.has(g.data[i]!)).toBe(true)
+    }
   })
 })
 
