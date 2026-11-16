@@ -20,6 +20,7 @@ import ShareModal from './components/ShareModal.vue'
 
 // 3D 预览整块按需加载，three.js 只在真正打开时才下载
 const Scene3DModal = defineAsyncComponent(() => import('./components/Scene3DModal.vue'))
+const IronModal = defineAsyncComponent(() => import('./components/IronModal.vue'))
 // 3D 编辑视图同理：three.js 的 chunk 只在切到 3D 时下载
 const Stage3D = defineAsyncComponent(() => import('./components/Stage3D.vue'))
 
@@ -35,6 +36,7 @@ const showPrint = ref(false)
 const showStock = ref(false)
 const showShare = ref(false)
 const showScene3D = ref(false)
+const showIron = ref(false)
 const panelOpen = ref(false)
 
 const toastText = ref('')
@@ -56,6 +58,7 @@ function closeAll(): void {
   showStock.value = false
   showShare.value = false
   showScene3D.value = false
+  showIron.value = false
 }
 
 function createProject(payload: { name: string; width: number; height: number }): void {
@@ -230,6 +233,7 @@ onBeforeUnmount(() => {
       @export-panel="showExport = true"
       @print="showPrint = true"
       @scene3d="showScene3D = true"
+      @iron="showIron = true"
       @toggle-panel="panelOpen = !panelOpen"
     />
 
@@ -263,6 +267,7 @@ onBeforeUnmount(() => {
     <PrintModal v-if="showPrint" @close="showPrint = false" />
     <StockModal v-if="showStock" @close="showStock = false" />
     <Scene3DModal v-if="showScene3D" @close="showScene3D = false" />
+    <IronModal v-if="showIron" @close="showIron = false" @saved="store.persist()" />
 
     <div v-if="toastText" class="toast">{{ toastText }}</div>
   </div>

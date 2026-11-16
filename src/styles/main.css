@@ -1452,3 +1452,168 @@ canvas,
     opacity: 0;
   }
 }
+
+/* ---- 自动熨烫机 ---- */
+.iron {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.iron-caption {
+  margin: 4px 0 0;
+  text-align: center;
+  font-family: var(--serif);
+  font-size: 18px;
+  color: var(--ink);
+  letter-spacing: 0.04em;
+}
+.iron-eyebrow {
+  display: block;
+  font-family: var(--sans, inherit);
+  font-size: 10px;
+  letter-spacing: 0.34em;
+  color: var(--ink-3);
+  margin-bottom: 6px;
+}
+.iron-sub {
+  margin: 0 0 6px;
+  text-align: center;
+  max-width: 34em;
+}
+
+.iron-machine {
+  position: relative;
+  width: min(440px, 92%);
+  border-radius: 26px;
+  padding: 18px 18px 0;
+  background: linear-gradient(180deg, #fffdfa 0%, #f4ece1 62%, #ece1d2 100%);
+  box-shadow: 0 20px 40px rgba(120, 100, 80, 0.18), inset 0 1px 0 #fff;
+  overflow: hidden;
+}
+.iron-screen {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: #22232b;
+  color: #f2f0ec;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 13px;
+  letter-spacing: 0.16em;
+}
+.iron-screen em {
+  margin-left: auto;
+  font-style: normal;
+  font-size: 9px;
+  color: #8b8d99;
+}
+.iron-led {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4a4c56;
+}
+.iron-led.on {
+  background: #7de3a5;
+  box-shadow: 0 0 8px #7de3a5;
+  animation: iron-pulse 1.1s ease-in-out infinite;
+}
+@keyframes iron-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+.iron-slots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 0 6px;
+}
+.iron-slots span {
+  width: 26px;
+  height: 4px;
+  border-radius: 2px;
+  background: #e4d9c9;
+  transition: background 0.2s ease;
+}
+.iron-slots span.lit {
+  background: var(--sakura);
+}
+.iron-mouth {
+  height: 22px;
+  margin: 0 -18px 0;
+  background: linear-gradient(180deg, #2b2b31, #17171c);
+  border-radius: 10px 10px 0 0;
+}
+.iron-sheet {
+  height: 78px;
+  margin: 0 -6px;
+  border-radius: 8px 8px 0 0;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.9), transparent 60%),
+    linear-gradient(180deg, #fffdf8, #efe4d3);
+  opacity: 0;
+  transform: translateY(16px);
+  transition: transform 0.5s ease, opacity 0.4s ease;
+}
+.iron-sheet.in {
+  opacity: 1;
+  transform: translateY(-4px);
+}
+.iron-sheet.out {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.iron-bar {
+  width: min(440px, 92%);
+  height: 6px;
+  border-radius: 999px;
+  background: var(--paper-3);
+  overflow: hidden;
+}
+.iron-bar-fill {
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--sakura), var(--clay));
+  transition: width 0.12s linear;
+}
+.iron-bar.live {
+  box-shadow: 0 0 0 3px rgba(233, 166, 174, 0.18);
+}
+
+.iron-result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+.iron-result img {
+  max-width: min(360px, 86%);
+  border-radius: 14px;
+  box-shadow: 0 12px 28px rgba(120, 100, 80, 0.22);
+  animation: iron-reveal 0.6s ease both;
+}
+@keyframes iron-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+.iron-picks {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+.iron-actions {
+  display: flex;
+  gap: 8px;
+  margin: 6px 0 4px;
+}
