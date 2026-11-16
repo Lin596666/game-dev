@@ -13,6 +13,7 @@ import ProjectsModal from './components/ProjectsModal.vue'
 import ImportImageModal from './components/ImportImageModal.vue'
 import ExportModal from './components/ExportModal.vue'
 import PrintModal from './components/PrintModal.vue'
+import StockModal from './components/StockModal.vue'
 
 // 3D 预览整块按需加载，three.js 只在真正打开时才下载
 const Scene3DModal = defineAsyncComponent(() => import('./components/Scene3DModal.vue'))
@@ -25,6 +26,7 @@ const showProjects = ref(false)
 const showImport = ref(false)
 const showExport = ref(false)
 const showPrint = ref(false)
+const showStock = ref(false)
 const showScene3D = ref(false)
 const panelOpen = ref(false)
 
@@ -44,6 +46,7 @@ function closeAll(): void {
   showImport.value = false
   showExport.value = false
   showPrint.value = false
+  showStock.value = false
   showScene3D.value = false
 }
 
@@ -166,7 +169,7 @@ onBeforeUnmount(() => {
     <div class="app-body">
       <ToolRail />
       <CanvasStage />
-      <SidePanel :class="{ open: panelOpen }" />
+      <SidePanel :class="{ open: panelOpen }" @stock="showStock = true" />
     </div>
 
     <NewProjectModal v-if="showNew" @close="showNew = false" @create="createProject" />
@@ -175,6 +178,7 @@ onBeforeUnmount(() => {
     <ImportImageModal v-if="showImport" @close="showImport = false" @apply="applyImport" />
     <ExportModal v-if="showExport" @close="showExport = false" />
     <PrintModal v-if="showPrint" @close="showPrint = false" />
+    <StockModal v-if="showStock" @close="showStock = false" />
     <Scene3DModal v-if="showScene3D" @close="showScene3D = false" />
 
     <div v-if="toastText" class="toast">{{ toastText }}</div>

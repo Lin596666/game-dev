@@ -5,6 +5,8 @@ import { useEditorStore, type Symmetry } from '@/store/editor'
 
 const store = useEditorStore()
 
+const emit = defineEmits<{ (e: 'stock'): void }>()
+
 const tab = ref<'color' | 'canvas' | 'guide'>('color')
 const activeSet = ref<ColorSetId>('basic')
 
@@ -208,6 +210,15 @@ function applyFit(): void {
         <div class="stat-row">
           <span>材料估价</span><b>¥ {{ store.cost.toFixed(2) }}</b>
         </div>
+        <div class="stat-row" style="cursor: pointer" @click="emit('stock')">
+          <span>还缺豆子</span>
+          <b :class="{ 'short-warn': store.stockInfo.totalShort > 0 }">
+            {{ store.stockInfo.totalShort > 0 ? `${store.stockInfo.totalShort} 颗` : '够用' }}
+          </b>
+        </div>
+        <button class="btn sm" style="width: 100%; margin-top: 8px" @click="emit('stock')">
+          库存 · 采购清单
+        </button>
         <div class="usage-list" style="margin-top: 8px">
           <div
             v-for="u in store.usage"

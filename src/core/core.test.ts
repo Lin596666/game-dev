@@ -8,6 +8,7 @@ import { colorUsage, instructionText, totalBeads } from './pattern'
 import { gridPhysicalInfo, physicalInfo, printLayout } from './physical'
 import { planPrint } from './print'
 import { createProjectFile, parseProjectFile, parseProjectText } from './project'
+import { purchaseText, stockReport } from './stock'
 
 describe('BeadGrid', () => {
   it('写入与读取', () => {
@@ -237,5 +238,44 @@ describe('A4 打印分页', () => {
     expect(last.y + last.rows).toBe(96)
     // 每个格子都必须恰好落在一页里
     expect(plan.pages.reduce((sum, p) => sum + p.cols * p.rows, 0)).toBe(96 * 96)
+  })
+})
+
+describe('豆子库存与采购清单', () => {
+  it('算得出每种色还缺多少', () => {
+    const g = new BeadGrid(4, 1)
+    const a = COLORS[0]!.id
+    const b = COLORS[1]!.id
+    g.set(0, 0, a)
+    g.set(1, 0, a)
+    g.set(2, 0, b)
+    const report = stockReport(g, { [a]: 5 })
+    expect(report.totalNeed).toBe(3)
+    expect(report.totalShort).toBe(1)
+    expect(report.shortColors).toBe(1)
+    expect(report.rows.find((r) => r.id === b)!.short).toBe(1)
+    expect(report.rows.find((r) => r.id === a)!.short).toBe(0)
+  })
+
+  it('库存够时清单明确说不用买', () => {
+    const g = new BeadGrid(2, 1)
+    const a = COLORS[0]!.id
+    g.set(0, 0, a)
+    g.set(1, 0, a)
+    const report = stockReport(g, { [a]: 100 })
+    expect(purchaseText(report)).toContain('不用买')
+  })
+
+  it('清单只列缺的颜色', () => {
+    const g = new BeadGrid(3, 1)
+    const a = COLORS[0]!.id
+    const b = COLORS[2]!.id
+    g.set(0, 0, a)
+    g.set(1, 0, b)
+    g.set(2, 0, b)
+    const text = purchaseText(stockReport(g, { [a]: 1 }), '测试图纸')
+    expect(text).toContain('测试图纸')
+    expect(text).toContain('缺 2 颗')
+    expect(text).not.toContain(COLORS[0]!.code)
   })
 })

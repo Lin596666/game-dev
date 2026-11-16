@@ -955,3 +955,5 @@ canvas,
     height: min(48vh, 380px);
   }
 }
+
+.short-warn { color: var(--clay); }

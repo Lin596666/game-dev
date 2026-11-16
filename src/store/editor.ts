@@ -6,6 +6,7 @@ import { UndoStack, diffSnapshot } from '@/core/history'
 import { fitToColorSet, type FitResult } from '@/core/palette'
 import { colorUsage, estimateCost } from '@/core/pattern'
 import { gridPhysicalInfo } from '@/core/physical'
+import { stockReport, type StockMap } from '@/core/stock'
 import { createProjectFile, parseProjectFile, type ParsedProject } from '@/core/project'
 import { renderThumbnail } from '@/renderer/export'
 import {
@@ -100,6 +101,46 @@ export const useEditorStore = defineStore('editor', () => {
   const cost = computed(() => estimateCost(total.value, pricePerBead.value))
   /** 成品尺寸、豆板数、打印页数（跟实物有关，不跟颜色用量有关） */
   const physical = computed(() => gridPhysicalInfo(grid.value))
+
+  // ---------- 豆子库存（手上有多少颗，用来算还缺什么） ----------
+  const STOCK_KEY = 'bead:stock'
+  const stock = ref<StockMap>(loadStock())
+
+  function loadStock(): StockMap {
+    try {
+      const raw = localStorage.getItem(STOCK_KEY)
+      if (!raw) return {}
+      const parsed = JSON.parse(raw) as unknown
+      if (!parsed || typeof parsed !== 'object') return {}
+      const out: StockMap = {}
+      for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
+        const id = Number(k)
+        const n = Number(v)
+        if (Number.isFinite(id) && Number.isFinite(n) && n >= 0) out[id] = Math.floor(n)
+      }
+      return out
+    } catch {
+      return {}
+    }
+  }
+
+  function setStock(id: number, have: number): void {
+    const n = Math.max(0, Math.floor(Number(have) || 0))
+    const next: StockMap = { ...stock.value }
+    if (n === 0) delete next[id]
+    else next[id] = n
+    stock.value = next
+    try {
+      localStorage.setItem(STOCK_KEY, JSON.stringify(next))
+    } catch {
+      /* 隐私模式下写不了 localStorage，库存在这次会话里还是有效的 */
+    }
+  }
+
+  const stockInfo = computed(() => {
+    void gridVersion.value
+    return stockReport(grid.value, stock.value)
+  })
   const canUndo = computed(() => {
     void historyVersion.value
     return undoStack.canUndo
@@ -628,6 +669,9 @@ export const useEditorStore = defineStore('editor', () => {
     total,
     cost,
     physical,
+    stock,
+    setStock,
+    stockInfo,
     canUndo,
     canRedo,
     currentColor,
