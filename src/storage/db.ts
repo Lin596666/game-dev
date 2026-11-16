@@ -20,6 +20,8 @@ export interface ProjectRecord {
   beads?: number
   /** 保存时选的烫法 id */
   finish?: string
+  /** 收藏（挑进作品册的常用作品） */
+  starred?: boolean
 }
 
 export interface ProjectSummary {
@@ -32,6 +34,7 @@ export interface ProjectSummary {
   thumb?: string
   beads?: number
   finish?: string
+  starred?: boolean
 }
 
 const DB_NAME = 'bead-atelier'
@@ -81,7 +84,7 @@ export async function loadProject(id: string): Promise<ProjectRecord | undefined
 export async function listProjects(): Promise<ProjectSummary[]> {
   const all = await tx<ProjectRecord[]>('readonly', (store) => store.getAll())
   return all
-    .map(({ id, name, width, height, updatedAt, createdAt, thumb, beads, finish }) => ({
+    .map(({ id, name, width, height, updatedAt, createdAt, thumb, beads, finish, starred }) => ({
       id,
       name,
       width,
@@ -90,7 +93,8 @@ export async function listProjects(): Promise<ProjectSummary[]> {
       createdAt,
       thumb,
       beads,
-      finish
+      finish,
+      starred: starred === true
     }))
     .sort((a, b) => b.updatedAt - a.updatedAt)
 }

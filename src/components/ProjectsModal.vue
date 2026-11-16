@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import type { ProjectSummary } from '@/storage/db'
 import { IRON_FINISHES } from '@/core/iron'
 import { useEditorStore } from '@/store/editor'
@@ -17,6 +17,22 @@ const loading = ref(true)
 const fileInput = ref<HTMLInputElement | null>(null)
 const editing = ref<string | null>(null)
 const editName = ref('')
+const tab = ref<'all' | 'starred'>('all')
+
+/** 收藏的排在前面，其余按最近编辑 */
+const shown = computed(() => {
+  const rows = tab.value === 'starred' ? list.value.filter((p) => p.starred) : list.value
+  return [...rows].sort((a, b) => {
+    if (!!a.starred !== !!b.starred) return a.starred ? -1 : 1
+    return b.updatedAt - a.updatedAt
+  })
+})
+const starredCount = computed(() => list.value.filter((p) => p.starred).length)
+
+async function toggleStar(p: ProjectSummary): Promise<void> {
+  await store.starProject(p.id, !p.starred)
+  await refresh()
+}
 
 function startRename(p: ProjectSummary): void {
   editing.value = p.id
@@ -80,7 +96,14 @@ async function onFile(e: Event): Promise<void> {
 </script>
 
 <template>
-  <Modal title="我的作品" wide @close="emit('close')">
+  <Modal title="我的作品册" wide @close="emit('close')">
+    <div class="lib-tabs" style="margin-bottom: 12px">
+      <button class="chip-tab" :class="{ on: tab === 'all' }" @click="tab = 'all'">全部 {{ list.length }}</button>
+      <button class="chip-tab" :class="{ on: tab === 'starred' }" @click="tab = 'starred'">
+        收藏 {{ starredCount }}
+      </button>
+    </div>
+
     <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap">
       <button class="btn sm" @click="pickFile">从工程文件导入</button>
       <button class="btn sm" @click="refresh">刷新</button>
@@ -92,8 +115,9 @@ async function onFile(e: Event): Promise<void> {
 
     <div v-if="loading" class="empty">正在读取本地作品…</div>
     <div v-else-if="!list.length" class="empty">还没有保存的作品，画点什么就会自动存下来</div>
+    <div v-else-if="!shown.length" class="empty">还没有收藏的作品，点作品上的 ☆ 收进这一格</div>
     <div v-else class="project-grid">
-      <div v-for="p in list" :key="p.id" class="project-card">
+      <div v-for="p in shown" :key="p.id" class="project-card" :class="{ starred: p.starred }">
         <div class="thumb" @click="emit('open', p.id)">
           <img v-if="p.thumb" :src="p.thumb" alt="" />
           <span v-else class="hint">空白</span>
@@ -106,7 +130,10 @@ async function onFile(e: Event): Promise<void> {
           <div v-else class="n">{{ p.name }}</div>
           <div class="d">{{ p.width }}×{{ p.height }}{{ p.beads ? ' · ' + p.beads + ' 颗' : '' }} · {{ fmt(p.updatedAt) }}</div>
           <div v-if="finishName(p.finish)" class="d">{{ finishName(p.finish) }}</div>
-          <div style="display: flex; gap: 6px; margin-top: 6px">
+          <div style="display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap">
+            <button class="btn sm" :title="p.starred ? '取消收藏' : '收藏进作品册'" @click="toggleStar(p)">
+              {{ p.starred ? '★' : '☆' }}
+            </button>
             <button class="btn sm" @click="emit('open', p.id)">打开</button>
             <button class="btn sm" @click="startRename(p)">改名</button>
             <button class="btn sm" @click="duplicate(p.id)">复制</button>

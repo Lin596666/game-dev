@@ -775,6 +775,14 @@ export const useEditorStore = defineStore('editor', () => {
     return true
   }
 
+  /** 收藏/取消收藏：作品册里挑常用的放前面 */
+  async function starProject(id: string, on: boolean): Promise<boolean> {
+    const rec = await loadProject(id)
+    if (!rec) return false
+    await saveProject({ ...rec, starred: on })
+    return true
+  }
+
   /** 复制一份作品（换个 id，原作品不动） */
   async function duplicateProject(id: string): Promise<string | null> {
     const rec = await loadProject(id)
@@ -1020,6 +1028,7 @@ export const useEditorStore = defineStore('editor', () => {
     removeProject,
     renameProject,
     duplicateProject,
+    starProject,
     listAll,
     projectFileJson,
     importJson,
