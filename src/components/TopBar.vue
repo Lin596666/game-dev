@@ -10,6 +10,7 @@ const emit = defineEmits<{
   (e: 'projects'): void
   (e: 'import-image'): void
   (e: 'export-panel'): void
+  (e: 'print'): void
   (e: 'scene3d'): void
   (e: 'toggle-panel'): void
 }>()
@@ -61,6 +62,7 @@ const saveText = computed(() => {
     <button class="btn sm" @click="emit('projects')">我的作品</button>
     <button class="btn sm" @click="emit('import-image')">导入图片</button>
     <button class="btn sm" title="把图纸摆成 3D 珠子看看效果" @click="emit('scene3d')">3D 摆件</button>
+    <button class="btn sm" title="分页打印 A4 图纸" @click="emit('print')">打印图纸</button>
     <button class="btn sm primary" @click="emit('export-panel')">导出</button>
 
     <button class="btn icon ghost mobile-only" title="面板" @click="emit('toggle-panel')">

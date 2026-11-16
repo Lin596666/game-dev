@@ -6,6 +6,7 @@ import { LIBRARY } from './library'
 import { fitToColorSet } from './palette'
 import { colorUsage, instructionText, totalBeads } from './pattern'
 import { gridPhysicalInfo, physicalInfo, printLayout } from './physical'
+import { planPrint } from './print'
 import { createProjectFile, parseProjectFile, parseProjectText } from './project'
 
 describe('BeadGrid', () => {
@@ -217,5 +218,24 @@ describe('旋转 90°', () => {
     expect(r.height).toBe(3)
     expect(r.get(1, 0)).toBe(1)
     expect(r.get(0, 2)).toBe(2)
+  })
+})
+
+describe('A4 打印分页', () => {
+  it('29×29 一页就够，区域从左上角开始', () => {
+    const plan = planPrint(29, 29)
+    expect(plan.pages.length).toBe(1)
+    expect(plan.pages[0]).toMatchObject({ x: 0, y: 0, cols: 29, rows: 29 })
+  })
+
+  it('96×96 会切成多页，最后一页只覆盖剩下的部分', () => {
+    const plan = planPrint(96, 96)
+    expect(plan.pages.length).toBe(plan.pagesX * plan.pagesY)
+    expect(plan.pages.length).toBeGreaterThan(1)
+    const last = plan.pages[plan.pages.length - 1]!
+    expect(last.x + last.cols).toBe(96)
+    expect(last.y + last.rows).toBe(96)
+    // 每个格子都必须恰好落在一页里
+    expect(plan.pages.reduce((sum, p) => sum + p.cols * p.rows, 0)).toBe(96 * 96)
   })
 })

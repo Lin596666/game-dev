@@ -12,6 +12,7 @@ import LibraryModal from './components/LibraryModal.vue'
 import ProjectsModal from './components/ProjectsModal.vue'
 import ImportImageModal from './components/ImportImageModal.vue'
 import ExportModal from './components/ExportModal.vue'
+import PrintModal from './components/PrintModal.vue'
 
 // 3D 预览整块按需加载，three.js 只在真正打开时才下载
 const Scene3DModal = defineAsyncComponent(() => import('./components/Scene3DModal.vue'))
@@ -23,6 +24,7 @@ const showLibrary = ref(false)
 const showProjects = ref(false)
 const showImport = ref(false)
 const showExport = ref(false)
+const showPrint = ref(false)
 const showScene3D = ref(false)
 const panelOpen = ref(false)
 
@@ -41,6 +43,7 @@ function closeAll(): void {
   showProjects.value = false
   showImport.value = false
   showExport.value = false
+  showPrint.value = false
   showScene3D.value = false
 }
 
@@ -87,6 +90,12 @@ function onKey(e: KeyboardEvent): void {
   if (meta && k === 'y') {
     e.preventDefault()
     store.redo()
+    return
+  }
+  // Ctrl+P 不要直接打印整个界面，先把图纸排版好
+  if (meta && k === 'p') {
+    e.preventDefault()
+    showPrint.value = true
     return
   }
   if (meta && k === 'c') {
@@ -149,6 +158,7 @@ onBeforeUnmount(() => {
       @projects="showProjects = true"
       @import-image="showImport = true"
       @export-panel="showExport = true"
+      @print="showPrint = true"
       @scene3d="showScene3D = true"
       @toggle-panel="panelOpen = !panelOpen"
     />
@@ -164,6 +174,7 @@ onBeforeUnmount(() => {
     <ProjectsModal v-if="showProjects" @close="showProjects = false" @open="openProject" />
     <ImportImageModal v-if="showImport" @close="showImport = false" @apply="applyImport" />
     <ExportModal v-if="showExport" @close="showExport = false" />
+    <PrintModal v-if="showPrint" @close="showPrint = false" />
     <Scene3DModal v-if="showScene3D" @close="showScene3D = false" />
 
     <div v-if="toastText" class="toast">{{ toastText }}</div>
