@@ -794,7 +794,36 @@ Page({
     wx.showToast({ title: '整片换成当前色了', icon: 'success' })
   },
 
+  // 重设画布：内容居中保留（和网页版一致）
+  onResizeTap(e) {
+    const size = Number(e.currentTarget.dataset.size)
+    if (!size || size === this.grid.width) return
+    const old = this.grid
+    const copyW = Math.min(size, old.width)
+    const copyH = Math.min(size, old.height)
+    const region = old.extractRect(
+      Math.floor((old.width - copyW) / 2),
+      Math.floor((old.height - copyH) / 2),
+      copyW,
+      copyH
+    )
+    const next = new core.BeadGrid(size, size)
+    next.blitRect(Math.floor((size - copyW) / 2), Math.floor((size - copyH) / 2), copyW, copyH, region)
+    this.grid = next
+    this.done = new Uint8Array(next.width * next.height)
+    this.undo.clear()
+    if (this.renderer) {
+      this.renderer.setGrid(next)
+      this.renderer.fit()
+    }
+    this.setData({ sizeText: size + '×' + size, progress: 0, moreOpen: false })
+    this.redraw()
+    this.updateStats()
+    this.persist()
+  },
+
   startClock() {
+
     if (this.clockTimer) return
     this.clockStart = Date.now()
     this.clockTimer = setInterval(() => {

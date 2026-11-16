@@ -421,3 +421,41 @@ describe('烫法（成品效果）', () => {
     expect(RAINBOW_COLORS).toHaveLength(6)
   })
 })
+
+describe('重设画布尺寸', () => {
+  it('内容居中保留，变大后四周留空', () => {
+    const old = new BeadGrid(4, 4)
+    old.set(0, 0, 1)
+    old.set(3, 3, 2)
+    const copyW = Math.min(6, old.width)
+    const copyH = Math.min(6, old.height)
+    const region = old.extractRect(
+      Math.floor((old.width - copyW) / 2),
+      Math.floor((old.height - copyH) / 2),
+      copyW,
+      copyH
+    )
+    const next = new BeadGrid(6, 6)
+    next.blitRect(Math.floor((6 - copyW) / 2), Math.floor((6 - copyH) / 2), copyW, copyH, region)
+    expect(next.get(1, 1)).toBe(1)
+    expect(next.get(4, 4)).toBe(2)
+    expect(next.usedCount()).toBe(2)
+  })
+
+  it('变小裁掉边缘', () => {
+    const old = new BeadGrid(6, 6)
+    old.set(0, 0, 3)
+    old.set(5, 5, 4)
+    const copyW = Math.min(4, old.width)
+    const copyH = Math.min(4, old.height)
+    const region = old.extractRect(
+      Math.floor((old.width - copyW) / 2),
+      Math.floor((old.height - copyH) / 2),
+      copyW,
+      copyH
+    )
+    const next = new BeadGrid(4, 4)
+    next.blitRect(0, 0, copyW, copyH, region)
+    expect(next.usedCount()).toBe(0)
+  })
+})

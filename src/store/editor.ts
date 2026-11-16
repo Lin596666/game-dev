@@ -612,6 +612,25 @@ export const useEditorStore = defineStore('editor', () => {
     loadGrid(grid.value.rotated90(), { keepName: true })
   }
 
+  /** 重设画布尺寸：内容保持居中（超出部分裁掉，空白处留空） */
+  function resizeCanvas(w: number, h: number): void {
+    const width = Math.max(8, Math.min(400, Math.round(w)))
+    const height = Math.max(8, Math.min(400, Math.round(h)))
+    const old = grid.value
+    if (width === old.width && height === old.height) return
+    const copyW = Math.min(width, old.width)
+    const copyH = Math.min(height, old.height)
+    const region = old.extractRect(
+      Math.floor((old.width - copyW) / 2),
+      Math.floor((old.height - copyH) / 2),
+      copyW,
+      copyH
+    )
+    const next = new BeadGrid(width, height)
+    next.blitRect(Math.floor((width - copyW) / 2), Math.floor((height - copyH) / 2), copyW, copyH, region)
+    loadGrid(next, { keepName: true })
+  }
+
   /** 把整张图纸的配色吸附到某套色卡，返回换了哪些色 */
   function fitPalette(set: ColorSetId): FitResult {
     beginStroke()
@@ -743,7 +762,51 @@ export const useEditorStore = defineStore('editor', () => {
     return true
   }
 
+  /** 改作品名（只改本机仓库里的那条记录，不动当前画布） */
+  async function renameProject(id: string, name: string): Promise<boolean> {
+    const rec = await loadProject(id)
+    if (!rec) return false
+    const nextName = name.trim() || '未命名'
+    const doc = JSON.parse(rec.payload) as Record<string, unknown>
+    doc.name = nextName
+    doc.updatedAt = Date.now()
+    await saveProject({ ...rec, name: nextName, updatedAt: Date.now(), payload: JSON.stringify(doc) })
+    if (id === docId.value) docName.value = nextName
+    return true
+  }
+
+  /** 复制一份作品（换个 id，原作品不动） */
+  async function duplicateProject(id: string): Promise<string | null> {
+    const rec = await loadProject(id)
+    if (!rec) return null
+    const parsed = parseProjectFile(JSON.parse(rec.payload))
+    const newId = crypto.randomUUID()
+    const name = (rec.name || '未命名') + ' 副本'
+    const file = createProjectFile(parsed.grid, {
+      id: newId,
+      name,
+      pricePerBead: parsed.pricePerBead,
+      done: parsed.done,
+      finish: parsed.finish ?? undefined,
+      createdAt: Date.now()
+    })
+    await saveProject({
+      id: newId,
+      name,
+      width: parsed.grid.width,
+      height: parsed.grid.height,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      payload: JSON.stringify(file),
+      thumb: renderThumbnail(parsed.grid, 200),
+      beads: parsed.grid.usedCount(),
+      finish: parsed.finish ?? 'raw'
+    })
+    return newId
+  }
+
   async function removeProject(id: string): Promise<void> {
+
     await deleteProject(id)
     if (id === docId.value) {
       docId.value = crypto.randomUUID()
@@ -936,6 +999,7 @@ export const useEditorStore = defineStore('editor', () => {
     replaceColor,
     transform,
     rotate90,
+    resizeCanvas,
     fitPalette,
     ownedIds,
     onlyOwned,
@@ -954,6 +1018,8 @@ export const useEditorStore = defineStore('editor', () => {
     loadParsed,
     openProject,
     removeProject,
+    renameProject,
+    duplicateProject,
     listAll,
     projectFileJson,
     importJson,

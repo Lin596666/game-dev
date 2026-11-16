@@ -1635,3 +1635,15 @@ canvas,
   background: #fff;
   color: var(--ink);
 }
+
+.mini-input {
+  width: 62px;
+  font: inherit;
+  font-size: 12px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  text-align: center;
+}

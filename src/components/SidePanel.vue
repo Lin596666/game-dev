@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { COLOR_SETS, groupedColors, type ColorSetId } from '@/core/colors'
 import { IRON_FINISHES } from '@/core/iron'
 import { useEditorStore, type Symmetry } from '@/store/editor'
@@ -42,6 +42,21 @@ const pct = computed(() => Math.round(store.progress * 100))
 // 换色卡：把整张图纸的配色吸附到用户实际买的那套豆子上
 const fitSet = ref<ColorSetId>('morandi')
 const fromColor = ref(0)
+
+// 画布尺寸（改大小会把内容居中保留，多出来的裁掉）
+const canvasW = ref(store.grid.width)
+const canvasH = ref(store.grid.height)
+watch(
+  () => [store.grid.width, store.grid.height] as const,
+  ([w, h]) => {
+    canvasW.value = w
+    canvasH.value = h
+  }
+)
+
+function applySize(): void {
+  store.resizeCanvas(canvasW.value, canvasH.value)
+}
 
 function doReplace(): void {
   if (!fromColor.value || fromColor.value === store.colorId) return
@@ -225,6 +240,17 @@ function applyFitOwned(): void {
           <button class="btn sm danger" @click="store.clearAll()">清空画布</button>
         </div>
         <p class="hint" style="margin: 8px 0 0">旋转 90° 会交换宽高，跟拼进度会跟着重置。</p>
+
+        <div class="panel-head" style="margin-top: 14px">
+          <span class="panel-title">画布尺寸</span>
+        </div>
+        <div class="row-inline">
+          <input v-model.number="canvasW" class="mini-input" type="number" min="8" max="400" />
+          <span class="hint">×</span>
+          <input v-model.number="canvasH" class="mini-input" type="number" min="8" max="400" />
+          <button class="btn sm" @click="applySize">应用</button>
+        </div>
+        <p class="hint" style="margin: 6px 0 0">内容居中保留，变小的部分会被裁掉。改尺寸会重置跟拼进度。</p>
 
         <div class="panel-head" style="margin-top: 14px">
           <span class="panel-title">配色替换</span>

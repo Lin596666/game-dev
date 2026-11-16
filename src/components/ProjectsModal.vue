@@ -15,6 +15,24 @@ const emit = defineEmits<{
 const list = ref<ProjectSummary[]>([])
 const loading = ref(true)
 const fileInput = ref<HTMLInputElement | null>(null)
+const editing = ref<string | null>(null)
+const editName = ref('')
+
+function startRename(p: ProjectSummary): void {
+  editing.value = p.id
+  editName.value = p.name
+}
+
+async function saveName(id: string): Promise<void> {
+  await store.renameProject(id, editName.value)
+  editing.value = null
+  await refresh()
+}
+
+async function duplicate(id: string): Promise<void> {
+  await store.duplicateProject(id)
+  await refresh()
+}
 
 function finishName(id?: string): string {
   if (!id) return ''
@@ -81,11 +99,17 @@ async function onFile(e: Event): Promise<void> {
           <span v-else class="hint">空白</span>
         </div>
         <div class="info">
-          <div class="n">{{ p.name }}</div>
+          <div v-if="editing === p.id" class="row-inline" style="margin-bottom: 4px">
+            <input v-model="editName" class="mini-input" style="width: auto; flex: 1; text-align: left" />
+            <button class="btn sm" @click="saveName(p.id)">好</button>
+          </div>
+          <div v-else class="n">{{ p.name }}</div>
           <div class="d">{{ p.width }}×{{ p.height }}{{ p.beads ? ' · ' + p.beads + ' 颗' : '' }} · {{ fmt(p.updatedAt) }}</div>
           <div v-if="finishName(p.finish)" class="d">{{ finishName(p.finish) }}</div>
           <div style="display: flex; gap: 6px; margin-top: 6px">
             <button class="btn sm" @click="emit('open', p.id)">打开</button>
+            <button class="btn sm" @click="startRename(p)">改名</button>
+            <button class="btn sm" @click="duplicate(p.id)">复制</button>
             <button class="btn sm danger" @click="remove(p.id)">删除</button>
           </div>
         </div>
