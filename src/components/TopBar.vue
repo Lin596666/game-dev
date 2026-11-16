@@ -4,7 +4,10 @@ import { useEditorStore } from '@/store/editor'
 
 const store = useEditorStore()
 
+const props = defineProps<{ view: '2d' | '3d' }>()
+
 const emit = defineEmits<{
+  (e: 'view', mode: '2d' | '3d'): void
   (e: 'new'): void
   (e: 'library'): void
   (e: 'projects'): void
@@ -42,6 +45,25 @@ const saveText = computed(() => {
     <div class="topbar-title">
       <input v-model="store.docName" class="title-input" maxlength="40" aria-label="图纸名称" />
       <span class="save-hint">{{ store.width }}×{{ store.height }} · {{ saveText }}</span>
+    </div>
+
+    <div class="view-switch" role="group" aria-label="视图切换">
+      <button
+        class="view-chip"
+        :class="{ on: props.view === '2d' }"
+        title="平面图纸，好拼好改（快捷键 1）"
+        @click="emit('view', '2d')"
+      >
+        2D
+      </button>
+      <button
+        class="view-chip"
+        :class="{ on: props.view === '3d' }"
+        title="立体珠子，看成品效果（快捷键 2）"
+        @click="emit('view', '3d')"
+      >
+        3D
+      </button>
     </div>
 
     <button class="btn icon ghost" title="撤销 Ctrl+Z" :disabled="!store.canUndo" @click="store.undo()">

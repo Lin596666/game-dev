@@ -17,9 +17,12 @@ import StockModal from './components/StockModal.vue'
 
 // 3D 预览整块按需加载，three.js 只在真正打开时才下载
 const Scene3DModal = defineAsyncComponent(() => import('./components/Scene3DModal.vue'))
+// 3D 编辑视图同理：three.js 的 chunk 只在切到 3D 时下载
+const Stage3D = defineAsyncComponent(() => import('./components/Stage3D.vue'))
 
 const store = useEditorStore()
 
+const view = ref<'2d' | '3d'>('2d')
 const showNew = ref(false)
 const showLibrary = ref(false)
 const showProjects = ref(false)
@@ -125,6 +128,15 @@ function onKey(e: KeyboardEvent): void {
     closeAll()
     return
   }
+  // 1 / 2 直接切 2D、3D 视图
+  if (k === '1' && !meta) {
+    view.value = '2d'
+    return
+  }
+  if (k === '2' && !meta) {
+    view.value = '3d'
+    return
+  }
   const toolKeys: Record<string, ToolId> = {
     b: 'pencil',
     e: 'eraser',
@@ -156,6 +168,8 @@ onBeforeUnmount(() => {
 <template>
   <div class="app">
     <TopBar
+      :view="view"
+      @view="view = $event"
       @new="showNew = true"
       @library="showLibrary = true"
       @projects="showProjects = true"
@@ -168,7 +182,15 @@ onBeforeUnmount(() => {
 
     <div class="app-body">
       <ToolRail />
-      <CanvasStage />
+      <CanvasStage v-if="view === '2d'" />
+      <Suspense v-else>
+        <Stage3D />
+        <template #fallback>
+          <div class="stage stage-loading">
+            <span class="muted">正在搬出三维盘子…</span>
+          </div>
+        </template>
+      </Suspense>
       <SidePanel :class="{ open: panelOpen }" @stock="showStock = true" />
     </div>
 

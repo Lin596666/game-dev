@@ -957,3 +957,130 @@ canvas,
 }
 
 .short-warn { color: var(--clay); }
+
+/* ---------------- 2D / 3D 视图切换 ---------------- */
+
+.view-switch {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper-2);
+}
+
+.view-chip {
+  min-width: 44px;
+  padding: 5px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.view-chip:hover {
+  color: var(--ink);
+}
+
+.view-chip.on {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.stage-3d {
+  background: #f3ede3;
+}
+
+.stage-3d-host {
+  position: absolute;
+  inset: 0;
+  cursor: grab;
+}
+
+.stage-3d-host:active {
+  cursor: grabbing;
+}
+
+.stage-pill.side {
+  left: 14px;
+  bottom: 14px;
+  transform: none;
+  max-width: calc(100% - 28px);
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.stage-pill.floor {
+  left: auto;
+  right: 14px;
+  bottom: 14px;
+  transform: none;
+  gap: 6px;
+}
+
+.stage-3d-count {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.stage-3d-pos em {
+  font-style: normal;
+  color: var(--ink-3);
+  margin-left: 6px;
+}
+
+.stage-3d-fail {
+  position: absolute;
+  inset: auto 16px 72px 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: var(--shadow);
+  font-size: 13px;
+}
+
+.stage-3d-fail p {
+  margin: 0 0 6px;
+}
+
+.stage-3d-fail .muted {
+  margin-bottom: 0;
+}
+
+.stage-loading {
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .view-switch {
+    order: 4;
+  }
+
+  .view-chip {
+    min-width: 38px;
+    padding: 4px 8px;
+  }
+
+  .stage-pill.side {
+    left: 10px;
+    right: 10px;
+    bottom: 58px;
+    max-width: none;
+  }
+
+  .stage-pill.floor {
+    right: 10px;
+    bottom: 10px;
+  }
+}
+
