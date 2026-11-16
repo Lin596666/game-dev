@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import type { ProjectSummary } from '@/storage/db'
+import { IRON_FINISHES } from '@/core/iron'
 import { useEditorStore } from '@/store/editor'
 import Modal from './Modal.vue'
 
@@ -14,6 +15,12 @@ const emit = defineEmits<{
 const list = ref<ProjectSummary[]>([])
 const loading = ref(true)
 const fileInput = ref<HTMLInputElement | null>(null)
+
+function finishName(id?: string): string {
+  if (!id) return ''
+  const f = IRON_FINISHES.find((x) => x.id === id)
+  return f && f.id !== 'raw' ? f.name : ''
+}
 
 function fmt(ts: number): string {
   const d = new Date(ts)
@@ -75,7 +82,8 @@ async function onFile(e: Event): Promise<void> {
         </div>
         <div class="info">
           <div class="n">{{ p.name }}</div>
-          <div class="d">{{ p.width }}×{{ p.height }} · {{ fmt(p.updatedAt) }}</div>
+          <div class="d">{{ p.width }}×{{ p.height }}{{ p.beads ? ' · ' + p.beads + ' 颗' : '' }} · {{ fmt(p.updatedAt) }}</div>
+          <div v-if="finishName(p.finish)" class="d">{{ finishName(p.finish) }}</div>
           <div style="display: flex; gap: 6px; margin-top: 6px">
             <button class="btn sm" @click="emit('open', p.id)">打开</button>
             <button class="btn sm danger" @click="remove(p.id)">删除</button>

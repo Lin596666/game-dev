@@ -4,6 +4,14 @@ import { useEditorStore } from '@/store/editor'
 import { BeadRenderer, MAX_ZOOM, MIN_ZOOM, type PreviewPatch } from '@/renderer/BeadRenderer'
 
 const store = useEditorStore()
+const peeling = ref(false)
+
+/** 撕烘焙纸：纯视觉，一秒钟的仪式感 */
+function peel(): void {
+  if (store.total === 0) return
+  peeling.value = false
+  requestAnimationFrame(() => (peeling.value = true))
+}
 
 const stageEl = ref<HTMLDivElement | null>(null)
 const canvasEl = ref<HTMLCanvasElement | null>(null)
@@ -393,7 +401,16 @@ watch(
         想照着画，去「图纸库」挑张现成的。
       </p>
     </div>
+    <div v-if="peeling" class="peel-layer" @animationend="peeling = false"></div>
     <div class="stage-pill">
+      <button
+        v-if="store.total > 0"
+        class="btn sm ghost"
+        title="把烘焙纸撕开，看看成品"
+        @click="peel"
+      >
+        撕开看看
+      </button>
       <button class="btn ghost icon" title="缩小" @click="zoomOut">−</button>
       <span class="zoom-label">{{ zoomPct }}%</span>
       <button class="btn ghost icon" title="放大" @click="zoomIn">＋</button>

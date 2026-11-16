@@ -16,6 +16,10 @@ export interface ProjectRecord {
   payload: string
   /** 列表缩略图 dataURL（约 200px） */
   thumb?: string
+  /** 用了多少颗豆子 */
+  beads?: number
+  /** 保存时选的烫法 id */
+  finish?: string
 }
 
 export interface ProjectSummary {
@@ -26,6 +30,8 @@ export interface ProjectSummary {
   updatedAt: number
   createdAt: number
   thumb?: string
+  beads?: number
+  finish?: string
 }
 
 const DB_NAME = 'bead-atelier'
@@ -75,14 +81,16 @@ export async function loadProject(id: string): Promise<ProjectRecord | undefined
 export async function listProjects(): Promise<ProjectSummary[]> {
   const all = await tx<ProjectRecord[]>('readonly', (store) => store.getAll())
   return all
-    .map(({ id, name, width, height, updatedAt, createdAt, thumb }) => ({
+    .map(({ id, name, width, height, updatedAt, createdAt, thumb, beads, finish }) => ({
       id,
       name,
       width,
       height,
       updatedAt,
       createdAt,
-      thumb
+      thumb,
+      beads,
+      finish
     }))
     .sort((a, b) => b.updatedAt - a.updatedAt)
 }

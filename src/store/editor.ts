@@ -450,7 +450,9 @@ export const useEditorStore = defineStore('editor', () => {
         createdAt: createdAt.value,
         updatedAt: Date.now(),
         payload: JSON.stringify(file),
-        thumb: g.usedCount() > 0 ? renderThumbnail(g, 200) : undefined
+        thumb: g.usedCount() > 0 ? renderThumbnail(g, 200) : undefined,
+        beads: g.usedCount(),
+        finish: finish.value
       })
       lastSavedAt.value = Date.now()
       dirty.value = false
