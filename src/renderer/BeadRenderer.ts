@@ -42,6 +42,8 @@ export interface GuideState {
   done: Uint8Array | null
   /** 高亮格子的强调色 */
   accent: string
+  /** 分步引导：光标所在格子，画一个描边圈提示"下一颗在这里" */
+  focus: { x: number; y: number } | null
 }
 
 export interface SelectionRect {
@@ -71,7 +73,7 @@ export class BeadRenderer {
   }
   private preview: PreviewPatch | null = null
   private selection: SelectionRect | null = null
-  private guide: GuideState = { highlight: null, done: null, accent: '#C97B5A' }
+  private guide: GuideState = { highlight: null, done: null, accent: '#C97B5A', focus: null }
 
   private cssWidth = 0
   private cssHeight = 0
@@ -359,7 +361,8 @@ export class BeadRenderer {
   ): void {
     const done = this.guide.done
     const highlight = this.guide.highlight
-    if (!done && !highlight) return
+    const focus = this.guide.focus
+    if (!done && !highlight && !focus) return
 
     const ctx = this.ctx
 
@@ -402,6 +405,27 @@ export class BeadRenderer {
         }
         ctx.restore()
       }
+    }
+
+    // 分步引导的光标：外圈强调色 + 内侧留白，任何缩放下都能一眼看到
+    if (focus && focus.x >= x0 && focus.x <= x1 && focus.y >= y0 && focus.y <= y1) {
+      const cx = ox + (focus.x + 0.5) * z
+      const cy = oy + (focus.y + 0.5) * z
+      const outer = Math.max(6, z * 0.62)
+      ctx.save()
+      ctx.lineWidth = Math.max(1.5, z * 0.1)
+      ctx.strokeStyle = this.guide.accent
+      ctx.beginPath()
+      ctx.arc(cx, cy, outer, 0, Math.PI * 2)
+      ctx.stroke()
+      if (z >= 7) {
+        ctx.lineWidth = Math.max(1, z * 0.05)
+        ctx.strokeStyle = this.hexToRgba(this.guide.accent, 0.5)
+        ctx.beginPath()
+        ctx.arc(cx, cy, outer * 0.62, 0, Math.PI * 2)
+        ctx.stroke()
+      }
+      ctx.restore()
     }
   }
 

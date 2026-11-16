@@ -81,3 +81,9 @@ temp/
 
 # 构建临时目录
 .tmp/
+
+# Tauri：Rust 编译产物与自动生成的权限 schema
+src-tauri/target/
+src-tauri/gen/
+# 打包图标由 `npm run tauri:icon` 生成
+src-tauri/icons/

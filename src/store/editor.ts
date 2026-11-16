@@ -135,6 +135,63 @@ export const useEditorStore = defineStore('editor', () => {
     return done
   })
 
+  // ---------- 分步跟拼 ----------
+  // 思路：不维护"第几颗"的绝对坐标，而是每次现算"还剩哪些格子没拼"（行优先）。
+  // 这样用户中途跳着拼、取消勾选、撤销，光标都不会错位——永远指向下一颗没拼的。
+
+  const guideStepMode = ref(false)
+  const guideStep = ref(0)
+
+  /** 还没拼的格子（行优先），分步引导就是按这个顺序走 */
+  const guideRemainingCells = computed<number[]>(() => {
+    void gridVersion.value
+    void doneVersion.value
+    const g = grid.value
+    const out: number[] = []
+    for (let i = 0; i < g.data.length; i++) {
+      if (g.data[i] === EMPTY) continue
+      if (done[i]) continue
+      out.push(i)
+    }
+    return out
+  })
+
+  const guideRemaining = computed(() => guideRemainingCells.value.length)
+
+  /** 当前光标指向的格子索引，-1 表示没有 */
+  const guideFocusIndex = computed(() => {
+    if (!guideStepMode.value) return -1
+    const list = guideRemainingCells.value
+    if (list.length === 0) return -1
+    return list[Math.min(guideStep.value, list.length - 1)] ?? -1
+  })
+
+  /** 当前光标坐标，交给渲染器画圈 */
+  const guideFocus = computed<{ x: number; y: number } | null>(() => {
+    const i = guideFocusIndex.value
+    if (i < 0) return null
+    const w = grid.value.width
+    return { x: i % w, y: Math.floor(i / w) }
+  })
+
+  function nextStep(): void {
+    guideStep.value = Math.min(guideStep.value + 1, Math.max(0, guideRemaining.value - 1))
+  }
+
+  function prevStep(): void {
+    guideStep.value = Math.max(0, guideStep.value - 1)
+  }
+
+  function resetStep(): void {
+    guideStep.value = 0
+  }
+
+  /** 光标跳回"按行从上到下"的第一颗，同时把视图交还给画布 */
+  function focusFirstRemaining(): void {
+    guideStep.value = 0
+    guideStepMode.value = true
+  }
+
   // ---------- 内部 ----------
 
   function touch(): void {
@@ -539,6 +596,14 @@ export const useEditorStore = defineStore('editor', () => {
     guideColorId,
     guideHighlight,
     guideDoneMask,
+    guideStepMode,
+    guideStep,
+    guideRemaining,
+    guideFocus,
+    nextStep,
+    prevStep,
+    resetStep,
+    focusFirstRemaining,
     doneCount,
     progress,
     // 派生

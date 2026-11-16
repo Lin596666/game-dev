@@ -326,13 +326,22 @@ watch(
   () => store.gridVersion,
   () => {
     renderer?.invalidate()
-    if (renderer) renderer.setGuide({ highlight: store.guideHighlight, done: store.guideDoneMask })
+    if (renderer) {
+      renderer.setGuide({
+        highlight: store.guideHighlight,
+        done: store.guideDoneMask,
+        focus: store.guideFocus
+      })
+    }
   }
 )
 
 watch(
-  () => [store.guideHighlight, store.guideDoneMask] as const,
-  ([h, d]) => renderer?.setGuide({ highlight: h, done: d }),
+  () => [store.guideHighlight, store.guideDoneMask, store.guideFocus] as const,
+  ([h, d, f]) => {
+    renderer?.setGuide({ highlight: h, done: d, focus: f })
+    renderer?.invalidate()
+  },
   { deep: false }
 )
 

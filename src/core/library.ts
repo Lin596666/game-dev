@@ -1,4 +1,4 @@
-import { COLORS, colorByHex } from './colors'
+import { COLORS, colorByHex, nearestColorToRgb } from './colors'
 import { BeadGrid } from './grid'
 
 /**
@@ -19,6 +19,16 @@ export interface LibraryPattern {
 function pick(hex: string): number {
   const c = colorByHex(hex)
   return c ? c.id : (COLORS[0]?.id ?? 1)
+}
+
+/** 色卡里没有这个色时，就近吸附到最接近的豆子色，保证图纸用色永远买得到 */
+function snap(hex: string): number {
+  const c = colorByHex(hex)
+  if (c) return c.id
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  return nearestColorToRgb(r, g, b).id
 }
 
 /** 心形：(x²+y²-1)³ - x²y³ ≤ 0 */
@@ -124,6 +134,159 @@ function dotGrid(size: number): BeadGrid {
   return g
 }
 
+/** 樱花：五个花瓣 + 中央花蕊，花瓣尖带一点缺口 */
+function sakuraGrid(size: number): BeadGrid {
+  const g = new BeadGrid(size, size)
+  const petal = snap('#F6C6D2')
+  const petalLight = snap('#FBE4EA')
+  const petalEdge = snap('#E48CA4')
+  const stamen = snap('#F2D06B')
+  const cx = size / 2
+  const cy = size / 2
+  const R = size * 0.47
+
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const dx = (x + 0.5 - cx) / R
+      const dy = (y + 0.5 - cy) / R
+      const rr = Math.hypot(dx, dy)
+      const ang = Math.atan2(dy, dx)
+      const boundary = 0.30 + 0.55 * Math.pow(Math.abs(Math.cos(2.5 * ang)), 1.6)
+      if (rr > boundary) continue
+      if (rr < 0.15) g.set(x, y, stamen)
+      else if (rr > boundary * 0.88) g.set(x, y, petalEdge)
+      else if (rr < 0.42) g.set(x, y, petalLight)
+      else g.set(x, y, petal)
+    }
+  }
+  g.version++
+  return g
+}
+
+/** 猫爪：一个肉垫加四个脚趾，最省豆的可爱款 */
+function pawGrid(size: number): BeadGrid {
+  const g = new BeadGrid(size, size)
+  const pad = snap('#F3B6C2')
+  const toe = snap('#F8D2D9')
+  const s = size
+  const cx = s * 0.5
+  const padCy = s * 0.66
+  const rx = s * 0.30
+  const ry = s * 0.23
+  const toes: Array<[number, number, number]> = [
+    [cx - s * 0.215, s * 0.33, s * 0.115],
+    [cx - s * 0.075, s * 0.22, s * 0.105],
+    [cx + s * 0.075, s * 0.22, s * 0.105],
+    [cx + s * 0.215, s * 0.33, s * 0.115]
+  ]
+
+  for (let y = 0; y < s; y++) {
+    for (let x = 0; x < s; x++) {
+      const px = x + 0.5
+      const py = y + 0.5
+      let filled = false
+      const ex = (px - cx) / rx
+      const ey = (py - padCy) / ry
+      if (ex * ex + ey * ey <= 1) {
+        g.set(x, y, pad)
+        filled = true
+      }
+      if (!filled) {
+        for (const [tx, ty, tr] of toes) {
+          if (Math.hypot(px - tx, py - ty) <= tr) {
+            g.set(x, y, toe)
+            filled = true
+            break
+          }
+        }
+      }
+    }
+  }
+  g.version++
+  return g
+}
+
+/** 草莓：上窄下圆的身体、绿色叶子、几点籽 */
+function strawberryGrid(size: number): BeadGrid {
+  const g = new BeadGrid(size, size)
+  const body = snap('#E8636F')
+  const bodyLight = snap('#F7B9BE')
+  const seed = snap('#FFE9B8')
+  const leaf = snap('#6FA36B')
+  const s = size
+  const cx = s * 0.5
+  const cy = s * 0.58
+  const R = s * 0.46
+
+  for (let y = 0; y < s; y++) {
+    for (let x = 0; x < s; x++) {
+      const nx = (x + 0.5 - cx) / R
+      const ny = (y + 0.5 - cy) / R
+      let scaleW = 1
+      if (ny < 0) scaleW = 1 - 0.26 * Math.min(1, -ny)
+      if (ny > 0.5) scaleW = 1 - 0.5 * (ny - 0.5)
+      if (scaleW <= 0.05) continue
+      const ex = nx / scaleW
+      if (ex * ex + ny * ny > 1) continue
+
+      if (ny < -0.74) {
+        g.set(x, y, leaf)
+      } else if ((x * 2 + y * 3) % 7 === 0 && ny > -0.5) {
+        g.set(x, y, seed)
+      } else if (ex > 0.1 && ny < 0.35) {
+        g.set(x, y, bodyLight)
+      } else {
+        g.set(x, y, body)
+      }
+    }
+  }
+  // 叶子尖上的一小截梗
+  const stemTop = Math.round(cy - R * 1.02)
+  const stemBottom = Math.round(cy - R * 0.78)
+  const stemX = Math.round(cx - 0.5)
+  for (let y = Math.max(0, stemTop); y <= Math.min(s - 1, stemBottom); y++) {
+    g.set(stemX, y, leaf)
+  }
+  g.version++
+  return g
+}
+
+/** 云朵：几个圆的并集加平底，挂在墙上很治愈 */
+function cloudGrid(size: number): BeadGrid {
+  const g = new BeadGrid(size, size)
+  const top = snap('#FBF8F3')
+  const edge = snap('#E6DCD0')
+  const s = size
+  const R = s * 0.44
+  const cx = s * 0.5
+  const cy = s * 0.5
+  const bubbles: Array<[number, number, number]> = [
+    [-0.44, 0.06, 0.30],
+    [-0.12, -0.20, 0.40],
+    [0.26, -0.02, 0.34],
+    [0.52, 0.14, 0.23]
+  ]
+
+  for (let y = 0; y < s; y++) {
+    for (let x = 0; x < s; x++) {
+      const nx = (x + 0.5 - cx) / R
+      const ny = (y + 0.5 - cy) / R
+      if (ny > 0.44) continue
+      let inside = false
+      for (const [bx, by, br] of bubbles) {
+        if (Math.hypot(nx - bx, ny - by) <= br) {
+          inside = true
+          break
+        }
+      }
+      if (!inside) continue
+      g.set(x, y, ny > 0.26 ? edge : top)
+    }
+  }
+  g.version++
+  return g
+}
+
 function pointInPolygon(px: number, py: number, poly: Array<[number, number]>): boolean {
   let inside = false
   for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
@@ -176,5 +339,33 @@ export const LIBRARY: LibraryPattern[] = [
     desc: '24×24，格子感强，适合练习按色数豆',
     size: 24,
     build: () => dotGrid(24)
+  },
+  {
+    id: 'sakura-31',
+    name: '樱花',
+    desc: '31×31，五瓣带花蕊，日系配色（约 300 颗）',
+    size: 31,
+    build: () => sakuraGrid(31)
+  },
+  {
+    id: 'paw-25',
+    name: '猫爪',
+    desc: '25×25，极省豆，半小时能拼完',
+    size: 25,
+    build: () => pawGrid(25)
+  },
+  {
+    id: 'strawberry-25',
+    name: '草莓',
+    desc: '25×25，红色系练习，带籽和叶子',
+    size: 25,
+    build: () => strawberryGrid(25)
+  },
+  {
+    id: 'cloud-29',
+    name: '云朵',
+    desc: '29×29，奶白渐变，适合做床头挂件',
+    size: 29,
+    build: () => cloudGrid(29)
   }
 ]

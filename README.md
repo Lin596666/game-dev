@@ -5,6 +5,8 @@
 
 ![tech](https://img.shields.io/badge/Vue-3-42b883) ![tech](https://img.shields.io/badge/TypeScript-strict-3178c6) ![tech](https://img.shields.io/badge/Canvas-2D-e9a6ae)
 
+在线玩：<https://lin596666.github.io/game-dev/>（手机浏览器打开后可以「添加到主屏幕」，离线也能用）
+
 ## 现在能做什么
 
 **画**
@@ -17,10 +19,14 @@
 **跟着图纸拼**
 - 跟拼模式：当前颜色高亮、已拼的格子自动打勾、按色标记完成
 - 顶部进度条显示已完成颗数 / 总颗数
-- 内置 4 张入门图纸（小爱心、奶油星星、五瓣小花、波点方巾），全部程序化生成，不占体积
+- **分步引导**：画布上一个圆圈指着"下一颗该拼的豆子"，点一下自动往前走；光标永远指向"下一颗没拼的格子"，跳着拼、撤回、取消勾选都不会错位
+- 内置 8 张入门图纸（小爱心、奶油星星、五瓣小花、波点方巾、樱花、猫爪、草莓、云朵），全部程序化生成，不占体积
 
 **外部素材变图纸**
 - 导入自己的图片 → 自动按所选色卡量化成拼豆格子，可调尺寸、色数上限、是否抖动
+
+**看效果**
+- **3D 摆件预览**：把图纸摆成一盘真珠子，可拖动旋转、缩放、自动旋转，珠子逐行落下（three.js 按需加载，不影响首屏）
 
 **成品出图**
 - 导出 PNG：每格 8/12/16/20px，可带网格、色号、图例、透明背景、按内容裁边
@@ -71,8 +77,12 @@ src/
 │   └── export.ts        # PNG 出图（图例、标尺、裁边）、缩略图
 ├── storage/db.ts    # IndexedDB 封装
 ├── store/editor.ts  # Pinia：文档状态、工具状态、撤销、自动保存
-├── components/      # 顶栏、工具栏、侧栏、画布舞台、各个弹层
+├── components/      # 顶栏、工具栏、侧栏、画布舞台、3D 预览、各个弹层
 └── styles/main.css  # 日式温馨风格的设计令牌
+
+src-tauri/           # 桌面端外壳（Tauri v2），界面代码一行都不在这里
+docs/                # 桌面端打包等说明
+scripts/build.mjs    # 构建包装：把 TEMP 指到项目内，绕开 Windows esbuild 报错
 ```
 
 ## 本地开发
@@ -84,6 +94,12 @@ npm test           # 核心逻辑单测
 npm run build      # vue-tsc 类型检查 + 打包，产物在 dist/
 npm run preview    # 预览构建产物
 ```
+
+> `npm run build` 走的是 `scripts/build.mjs` 而不是直接 `vite build`：它会先把
+> `TEMP/TMP` 指到项目内的 `.tmp/`，绕开 Windows 上 esbuild 删临时文件被拒绝的报错
+> （`[vite:esbuild-transpile] remove ...: Access is denied`）。
+
+桌面端打包见 [docs/desktop.md](docs/desktop.md)。
 
 `dist/` 是纯静态文件，丢到 GitHub Pages / Cloudflare Pages / Vercel 都能直接跑，不需要服务器，也就不涉及域名备案。
 
@@ -104,9 +120,11 @@ iOS Safari 有一个「7 天不访问就清空网站数据」的策略，Indexed
 ## 路线图
 
 - [x] 核心绘制、跟拼、图片转图纸、导出
-- [ ] 桌面端打包（Tauri v2）
+- [x] 分步引导（一颗一颗带新手拼）
+- [x] 3D 预览作品摆件效果（three.js 懒加载，不拖慢首屏）
+- [x] 桌面端脚手架（Tauri v2，配置已就绪，需本机装 Rust 后才能编译，见 [docs/desktop.md](docs/desktop.md)）
+- [ ] 桌面端实际打包出安装包（本机尚无 Rust 工具链）
 - [ ] 手机商店上架（Capacitor 7，需要 APP 备案号 + 软著）
-- [ ] 3D 预览作品摆件效果（three.js 懒加载，不拖慢首屏）
 
 ## 开发约定
 

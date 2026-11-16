@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
+import { COLORS } from './colors'
 import { BeadGrid, EMPTY } from './grid'
 import { UndoStack, diffSnapshot } from './history'
+import { LIBRARY } from './library'
 import { colorUsage, instructionText, totalBeads } from './pattern'
 import { createProjectFile, parseProjectFile, parseProjectText } from './project'
 
@@ -131,4 +133,22 @@ describe('工程文件', () => {
     expect(() => parseProjectText('not json')).toThrow()
     expect(() => parseProjectFile({ v: 999 })).toThrow()
   })
+})
+
+describe('内置图纸库', () => {
+  const ids = new Set(COLORS.map((c) => c.id))
+  for (const p of LIBRARY) {
+    it(`${p.id} 能生成有效图纸`, () => {
+      const g = p.build()
+      expect(g.width).toBe(p.size)
+      expect(g.height).toBe(p.size)
+      expect(totalBeads(g)).toBeGreaterThan(p.size * p.size * 0.1)
+      expect(totalBeads(g)).toBeLessThan(p.size * p.size)
+      for (let i = 0; i < g.data.length; i++) {
+        const v = g.data[i]
+        if (v === EMPTY) continue
+        expect(ids.has(v)).toBe(true)
+      }
+    })
+  }
 })

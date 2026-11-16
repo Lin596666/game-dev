@@ -197,6 +197,38 @@ const pct = computed(() => Math.round(store.progress * 100))
 
       <div class="panel-section">
         <div class="panel-head">
+          <span class="panel-title">分步引导</span>
+          <span class="panel-sub">一颗一颗来</span>
+        </div>
+        <label class="usage-item" style="cursor: pointer" @click.prevent="store.guideStepMode = !store.guideStepMode">
+          <input type="checkbox" :checked="store.guideStepMode" />
+          开启分步引导
+        </label>
+        <template v-if="store.guideStepMode">
+          <div class="stat-row" style="margin-top: 6px">
+            <span>还剩</span><b>{{ store.guideRemaining }} 颗没拼</b>
+          </div>
+          <div class="stat-row">
+            <span>光标位置</span>
+            <b v-if="store.guideFocus">第 {{ store.guideFocus.y + 1 }} 行 · 第 {{ store.guideFocus.x + 1 }} 列</b>
+            <b v-else>全部拼完啦 🎉</b>
+          </div>
+          <div style="margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap">
+            <button class="btn sm" :disabled="store.guideRemaining === 0" @click="store.prevStep()">上一颗</button>
+            <button class="btn sm" :disabled="store.guideRemaining === 0" @click="store.nextStep()">下一颗</button>
+            <button class="btn sm" :disabled="store.guideRemaining === 0" @click="store.resetStep()">回到开头</button>
+          </div>
+          <p class="hint" style="margin: 8px 0 0">
+            光标会一直停在「下一颗没拼的格子」上，点一下画布就算拼好，光标自动往前走。跳着拼也不会错位。
+          </p>
+        </template>
+        <p v-else class="hint" style="margin: 6px 0 0">
+          开启后画布上会出现一个圈，指着"下一颗该拼的豆子"，适合完全没拼过的新手。
+        </p>
+      </div>
+
+      <div class="panel-section">
+        <div class="panel-head">
           <span class="panel-title">高亮范围</span>
         </div>
         <select class="select" :value="store.guideColorId ?? 0" @change="onGuideColor">
