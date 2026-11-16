@@ -5,6 +5,7 @@
     <view class="act" bindtap="saveNow">保存</view>
     <view class="act" bindtap="copyList">清单</view>
     <view class="act" bindtap="exportImage">导出</view>
+    <view class="act" bindtap="openMore">更多</view>
   </view>
 
   <view class="stage">
@@ -49,6 +50,9 @@
       <view class="pill on">只看：{{guideLabel}}</view>
     </picker>
     <view class="pill">已拼 {{progress}}%</view>
+    <view class="pill {{stepMode ? 'on' : ''}}" bindtap="toggleStep">分步</view>
+    <view wx:if="{{stepMode}}" class="pill" bindtap="prevStep">上一颗</view>
+    <view wx:if="{{stepMode}}" class="pill" bindtap="nextStep">下一颗（还剩 {{stepTotal}}）</view>
   </view>
 
   <view class="setbar">
@@ -73,4 +77,60 @@
       ></view>
     </view>
   </scroll-view>
+
+  <view wx:if="{{moreOpen}}" class="mask" bindtap="closeMore"></view>
+  <view class="sheet {{moreOpen ? 'open' : ''}}">
+    <view class="sheet-head">
+      <text class="sheet-title">更多</text>
+      <text class="sheet-close" bindtap="closeMore">收起</text>
+    </view>
+
+    <view class="group">
+      <text class="group-title">对称绘制</text>
+      <view class="pills">
+        <view class="pill {{symmetry === 'none' ? 'on' : ''}}" bindtap="setSymmetry" data-v="none">不对称</view>
+        <view class="pill {{symmetry === 'x' ? 'on' : ''}}" bindtap="setSymmetry" data-v="x">左右对称</view>
+        <view class="pill {{symmetry === 'y' ? 'on' : ''}}" bindtap="setSymmetry" data-v="y">上下对称</view>
+        <view class="pill {{symmetry === 'quad' ? 'on' : ''}}" bindtap="setSymmetry" data-v="quad">四向对称</view>
+      </view>
+    </view>
+
+    <view class="group">
+      <text class="group-title">整张图纸</text>
+      <view class="pills">
+        <view class="pill" bindtap="transformGrid" data-kind="flipX">左右翻转</view>
+        <view class="pill" bindtap="transformGrid" data-kind="flipY">上下翻转</view>
+        <view class="pill" bindtap="transformGrid" data-kind="rotate180">旋转 180°</view>
+        <view class="pill" bindtap="rotate90Action">旋转 90°</view>
+        <view class="pill" bindtap="trimGrid">裁掉空白</view>
+        <view class="pill" bindtap="clearGrid">清空画布</view>
+      </view>
+      <text class="hint">旋转 90° 与裁掉空白会重置跟拼进度。</text>
+      <picker mode="selector" range="{{usageOptions}}" range-key="label" bindchange="onReplacePick">
+        <view class="pill" style="margin-top: 8px">配色替换：把某个色号换成当前色</view>
+      </picker>
+    </view>
+
+    <view class="group">
+      <text class="group-title">跟拼辅助</text>
+      <view class="pills">
+        <view class="pill {{showBoards ? 'on' : ''}}" bindtap="toggleBoards">豆板分块线</view>
+        <view class="pill {{stepMode ? 'on' : ''}}" bindtap="toggleStep">分步引导</view>
+      </view>
+      <text class="hint">{{stepMode ? '分步引导开着：光标会停在下一颗要拼的珠子上，还剩 ' + stepTotal + ' 颗' : '打开分步引导，光标会告诉你下一颗拼哪里'}}</text>
+    </view>
+
+    <view class="group">
+      <text class="group-title">分享与备份</text>
+      <view class="pills">
+        <view class="pill" bindtap="copyShare">复制分享码</view>
+        <view class="pill" bindtap="importShare">从剪贴板导入</view>
+        <view class="pill" bindtap="copyProject">复制工程文件</view>
+        <view class="pill" bindtap="copyPurchase">采购清单</view>
+      </view>
+      <text class="hint">分享码和工程文件都是纯文本，粘到微信里发给朋友就行，我不需要服务器。</text>
+    </view>
+
+    <text class="hint">这次拼了 {{minutes}} 分钟 · 每 45 分钟会震一下提醒你起身</text>
+  </view>
 </view>

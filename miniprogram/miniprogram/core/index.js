@@ -50,11 +50,15 @@ __export(entry_exports, {
   colorByHex: () => colorByHex,
   colorById: () => colorById,
   colorUsage: () => colorUsage,
+  colorsOfSet: () => colorsOfSet,
   createProjectFile: () => createProjectFile,
+  decodeShare: () => decodeShare,
   diffSnapshot: () => diffSnapshot,
+  encodeShare: () => encodeShare,
   estimateCost: () => estimateCost,
   finishById: () => finishById,
   fitToColorSet: () => fitToColorSet,
+  fitToColors: () => fitToColors,
   groupedColors: () => groupedColors,
   inkOn: () => inkOn,
   instructionText: () => instructionText,
@@ -63,8 +67,11 @@ __export(entry_exports, {
   parseProjectText: () => parseProjectText,
   physicalInfo: () => physicalInfo,
   printLayout: () => printLayout,
+  purchaseText: () => purchaseText,
   quantizeImage: () => quantizeImage,
+  shareCodeFromUrl: () => shareCodeFromUrl,
   sparkleAt: () => sparkleAt,
+  stockReport: () => stockReport,
   totalBeads: () => totalBeads
 });
 module.exports = __toCommonJS(entry_exports);
@@ -1456,3 +1463,129 @@ function sparkleAt(x, y, finish) {
   };
 }
 var RAINBOW_COLORS = ["#FF8FA3", "#FFC978", "#FFF1A8", "#A8E0C0", "#A8C8F0", "#D0B3F0"];
+
+// src/core/share.ts
+var PREFIX = "b1";
+function writeVarint(out, value) {
+  let v = value;
+  while (v >= 128) {
+    out.push(v & 127 | 128);
+    v = Math.floor(v / 128);
+  }
+  out.push(v);
+}
+function readVarint(bytes, pos) {
+  let result = 0;
+  let shift = 1;
+  while (pos.i < bytes.length) {
+    const b = bytes[pos.i++];
+    result += (b & 127) * shift;
+    if ((b & 128) === 0) return result;
+    shift *= 128;
+  }
+  throw new Error("分享码不完整");
+}
+function toBase64Url(bytes) {
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+function fromBase64Url(text) {
+  const pad = text.length % 4 === 0 ? "" : "=".repeat(4 - text.length % 4);
+  const binary = atob(text.replace(/-/g, "+").replace(/_/g, "/") + pad);
+  const out = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) out[i] = binary.charCodeAt(i);
+  return out;
+}
+function encodeShare(payload) {
+  const { width, height, cells } = payload;
+  const out = [];
+  let run = 0;
+  let current = -1;
+  for (let i = 0; i < cells.length; i++) {
+    const id = cells[i];
+    if (id === current) {
+      run++;
+      continue;
+    }
+    if (current >= 0) {
+      writeVarint(out, run);
+      writeVarint(out, current);
+    }
+    current = id;
+    run = 1;
+  }
+  if (current >= 0) {
+    writeVarint(out, run);
+    writeVarint(out, current);
+  }
+  const body = toBase64Url(new Uint8Array(out));
+  return `${PREFIX}.${width}.${height}.${body}`;
+}
+function decodeShare(code) {
+  const text = code.trim();
+  const parts = text.split(".");
+  if (parts.length !== 4 || parts[0] !== PREFIX) {
+    throw new Error("不是有效的分享码");
+  }
+  const width = Number(parts[1]);
+  const height = Number(parts[2]);
+  if (!Number.isInteger(width) || !Number.isInteger(height)) throw new Error("分享码尺寸不对");
+  if (width <= 0 || height <= 0 || width > 600 || height > 600) {
+    throw new Error("分享码尺寸超出范围");
+  }
+  const bytes = fromBase64Url(parts[3]);
+  const cells = new Uint16Array(width * height);
+  const pos = { i: 0 };
+  let filled = 0;
+  while (pos.i < bytes.length) {
+    const run = readVarint(bytes, pos);
+    const id = readVarint(bytes, pos);
+    for (let k = 0; k < run && filled < cells.length; k++) cells[filled++] = id;
+  }
+  if (filled !== cells.length) throw new Error("分享码格子数量对不上");
+  return { name: "", width, height, cells };
+}
+function shareCodeFromUrl(hash) {
+  const m = /[#&]p=([^&]+)/.exec(hash);
+  return m ? decodeURIComponent(m[1]) : "";
+}
+
+// src/core/stock.ts
+function stockReport(grid, stock = {}, fallbackHave = 0) {
+  const rows = colorUsage(grid).map((u) => {
+    var _a;
+    const have = (_a = stock[u.id]) != null ? _a : fallbackHave;
+    return {
+      id: u.id,
+      code: u.color.code,
+      name: u.color.name,
+      hex: u.color.hex,
+      need: u.count,
+      have,
+      short: Math.max(0, u.count - have)
+    };
+  });
+  return {
+    rows,
+    totalNeed: rows.reduce((s, r) => s + r.need, 0),
+    totalShort: rows.reduce((s, r) => s + r.short, 0),
+    shortColors: rows.filter((r) => r.short > 0).length
+  };
+}
+function purchaseText(report, docName = "拼豆图纸") {
+  const short = report.rows.filter((r) => r.short > 0);
+  const head = `${docName} · 采购清单`;
+  if (short.length === 0) return `${head}
+
+手上的豆子够拼这张图，不用买。
+`;
+  const lines = short.map((r) => `${r.code} ${r.name}  缺 ${r.short} 颗（共需 ${r.need}，手上 ${r.have}）`);
+  return [
+    head,
+    "",
+    ...lines,
+    "",
+    `合计：${short.length} 种颜色，${report.totalShort} 颗`
+  ].join("\n");
+}

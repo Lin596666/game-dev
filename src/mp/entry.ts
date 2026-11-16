@@ -27,7 +27,9 @@ export {
   base64ToCells
 } from '../core/project'
 export { LIBRARY } from '../core/library'
-export { fitToColorSet } from '../core/palette'
+export { fitToColorSet, fitToColors, colorsOfSet } from '../core/palette'
 export { physicalInfo, printLayout, BEAD_MM, BOARD_SIZE } from '../core/physical'
 export { quantizeImage } from '../core/quantize'
 export { IRON_FINISHES, finishById, sparkleAt, RAINBOW_COLORS } from '../core/iron'
+export { encodeShare, decodeShare, shareCodeFromUrl } from '../core/share'
+export { stockReport, purchaseText } from '../core/stock'

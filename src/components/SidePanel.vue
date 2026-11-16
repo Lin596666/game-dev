@@ -41,6 +41,13 @@ const pct = computed(() => Math.round(store.progress * 100))
 
 // 换色卡：把整张图纸的配色吸附到用户实际买的那套豆子上
 const fitSet = ref<ColorSetId>('morandi')
+const fromColor = ref(0)
+
+function doReplace(): void {
+  if (!fromColor.value || fromColor.value === store.colorId) return
+  store.replaceColor(fromColor.value, store.colorId)
+  fromColor.value = 0
+}
 const fitMsg = ref('')
 
 function applyFit(): void {
@@ -218,6 +225,21 @@ function applyFitOwned(): void {
           <button class="btn sm danger" @click="store.clearAll()">清空画布</button>
         </div>
         <p class="hint" style="margin: 8px 0 0">旋转 90° 会交换宽高，跟拼进度会跟着重置。</p>
+
+        <div class="panel-head" style="margin-top: 14px">
+          <span class="panel-title">配色替换</span>
+        </div>
+        <div class="row-inline">
+          <select v-model.number="fromColor" class="mini-select">
+            <option v-for="u in store.usage" :key="u.id" :value="u.id">
+              {{ u.color.code }} {{ u.color.name }} ×{{ u.count }}
+            </option>
+          </select>
+          <button class="btn sm" :disabled="!fromColor || fromColor === store.colorId" @click="doReplace">
+            换成当前色
+          </button>
+        </div>
+        <p class="hint" style="margin: 6px 0 0">把图纸里某个色号整片换掉，适合买不到这个色。可撤销。</p>
       </div>
 
       <div class="panel-section">

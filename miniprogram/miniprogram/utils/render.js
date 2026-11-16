@@ -32,6 +32,7 @@ class Renderer {
     this.ox = 0
     this.oy = 0
     this.showNumbers = false
+    this.boardLines = false
     this.guide = { mode: false, done: null, colorId: 0, focus: null }
     this.finish = core.finishById('raw')
     this.sparkleAt = core.sparkleAt
@@ -47,6 +48,7 @@ class Renderer {
     if (typeof opts.showNumbers === 'boolean') this.showNumbers = opts.showNumbers
     if (opts.finish) this.finish = opts.finish
     if (typeof opts.sparkleAt === 'function') this.sparkleAt = opts.sparkleAt
+    if (typeof opts.boardLines === 'boolean') this.boardLines = opts.boardLines
     this.render()
   }
 
@@ -203,6 +205,27 @@ class Renderer {
         ctx.lineWidth = 1
         ctx.stroke()
       }
+    }
+
+    // 4b. 豆板分块线：每 29 格一道虚线，大图可以一块一块拼
+    if (this.boardLines && g.width > 29 || (this.boardLines && g.height > 29)) {
+      ctx.save()
+      ctx.setLineDash([z * 0.9, z * 0.6])
+      ctx.strokeStyle = 'rgba(201,123,90,0.55)'
+      ctx.lineWidth = Math.max(1.2, z * 0.09)
+      ctx.beginPath()
+      for (let bx = 29; bx < g.width; bx += 29) {
+        const px = this.ox + bx * z
+        ctx.moveTo(px, this.oy + y0 * z)
+        ctx.lineTo(px, this.oy + (y1 + 1) * z)
+      }
+      for (let by = 29; by < g.height; by += 29) {
+        const py = this.oy + by * z
+        ctx.moveTo(this.ox + x0 * z, py)
+        ctx.lineTo(this.ox + (x1 + 1) * z, py)
+      }
+      ctx.stroke()
+      ctx.restore()
     }
 
     // 5. 色号

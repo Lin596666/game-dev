@@ -15,7 +15,9 @@
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:icon": "tauri icon public/bead.svg",
-    "tauri:build": "tauri build"
+    "tauri:build": "tauri build",
+    "mp:test": "node scripts/mp-smoke.cjs",
+    "mp:check": "node scripts/mp-smoke.cjs"
   },
   "dependencies": {
     "pinia": "^2.3.0",
@@ -25,6 +27,7 @@
   "devDependencies": {
     "@types/three": "^0.171.0",
     "@vitejs/plugin-vue": "^5.2.1",
+    "miniprogram-automator": "^0.13.0",
     "typescript": "^5.7.2",
     "vite": "^6.0.7",
     "vite-plugin-pwa": "^0.21.1",

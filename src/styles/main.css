@@ -1617,3 +1617,21 @@ canvas,
   gap: 8px;
   margin: 6px 0 4px;
 }
+
+/* 行内小控件（配色替换、筛选等） */
+.row-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mini-select {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 12px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+}
