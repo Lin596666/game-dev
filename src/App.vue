@@ -12,6 +12,7 @@ import SidePanel from './components/SidePanel.vue'
 import NewProjectModal from './components/NewProjectModal.vue'
 import LibraryModal from './components/LibraryModal.vue'
 import ProjectsModal from './components/ProjectsModal.vue'
+import WallModal from './components/WallModal.vue'
 import ImportImageModal from './components/ImportImageModal.vue'
 import ExportModal from './components/ExportModal.vue'
 import PrintModal from './components/PrintModal.vue'
@@ -30,6 +31,7 @@ const view = ref<'2d' | '3d'>('2d')
 const showNew = ref(false)
 const showLibrary = ref(false)
 const showProjects = ref(false)
+const showWall = ref(false)
 const showImport = ref(false)
 const showExport = ref(false)
 const showPrint = ref(false)
@@ -52,6 +54,7 @@ function closeAll(): void {
   showNew.value = false
   showLibrary.value = false
   showProjects.value = false
+  showWall.value = false
   showImport.value = false
   showExport.value = false
   showPrint.value = false
@@ -79,6 +82,7 @@ function pickLibrary(id: string): void {
 async function openProject(id: string): Promise<void> {
   const ok = await store.openProject(id)
   showProjects.value = false
+  showWall.value = false
   toast(ok ? '已打开' : '打开失败，文件可能损坏')
 }
 
@@ -229,6 +233,7 @@ onBeforeUnmount(() => {
       @new="showNew = true"
       @library="showLibrary = true"
       @projects="showProjects = true"
+      @wall="showWall = true"
       @import-image="showImport = true"
       @export-panel="showExport = true"
       @print="showPrint = true"
@@ -254,6 +259,7 @@ onBeforeUnmount(() => {
     <NewProjectModal v-if="showNew" @close="showNew = false" @create="createProject" />
     <LibraryModal v-if="showLibrary" @close="showLibrary = false" @pick="pickLibrary" />
     <ProjectsModal v-if="showProjects" @close="showProjects = false" @open="openProject" />
+    <WallModal v-if="showWall" @close="showWall = false" @open="openProject" />
     <ImportImageModal v-if="showImport" @close="showImport = false" @apply="applyImport" />
     <ExportModal
       v-if="showExport"

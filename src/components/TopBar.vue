@@ -11,6 +11,7 @@ const emit = defineEmits<{
   (e: 'new'): void
   (e: 'library'): void
   (e: 'projects'): void
+  (e: 'wall'): void
   (e: 'import-image'): void
   (e: 'export-panel'): void
   (e: 'print'): void
@@ -83,6 +84,7 @@ const saveText = computed(() => {
     <button class="btn sm" @click="emit('new')">新建</button>
     <button class="btn sm" @click="emit('library')">图纸库</button>
     <button class="btn sm" @click="emit('projects')">我的作品</button>
+    <button class="btn sm" title="把成品挂到一面墙上看看" @click="emit('wall')">作品墙</button>
     <button class="btn sm" @click="emit('import-image')">导入图片</button>
     <button class="btn sm" title="把图纸摆成 3D 珠子看看效果" @click="emit('scene3d')">3D 摆件</button>
     <button class="btn sm" title="推托盘、熨一遍，选出成品效果" @click="emit('iron')">熨烫机</button>
