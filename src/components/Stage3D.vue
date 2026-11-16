@@ -9,7 +9,6 @@ const store = useEditorStore()
 const host = ref<HTMLDivElement | null>(null)
 const hoverCell = ref<{ x: number; y: number } | null>(null)
 const autoRotate = ref(false)
-const ironed = ref(false)
 const failed = ref('')
 const beadCount = ref(0)
 
@@ -53,6 +52,7 @@ onMounted(() => {
     })
     stage.setGrid(store.grid)
     stage.setAutoRotate(autoRotate.value)
+    stage.setFinish(store.finish)
     syncCount()
   } catch (err) {
     failed.value = err instanceof Error ? err.message : String(err)
@@ -76,8 +76,10 @@ watch(
 )
 
 watch(autoRotate, (on) => stage?.setAutoRotate(on))
-watch(ironed, (on) => stage?.setIroned(on))
-
+watch(
+  () => store.finish,
+  (id) => stage?.setFinish(id)
+)
 onBeforeUnmount(() => {
   stage?.dispose()
   stage = null
@@ -112,11 +114,11 @@ function hoverColorName(): string {
     <div class="stage-pill floor">
       <button
         class="btn sm"
-        :class="{ primary: ironed }"
+        :class="{ primary: store.finish !== 'raw' }"
         title="把珠子压扁，看熨烫后的成品"
-        @click="ironed = !ironed"
+        @click="store.setFinish(store.finish === 'raw' ? 'cloth' : 'raw')"
       >
-        {{ ironed ? '熨烫中' : '熨烫' }}
+        {{ store.finish === 'raw' ? '熨烫' : store.finishInfo.name }}
       </button>
       <button class="btn sm" title="回到正面视角" @click="stage?.resetView()">正视角</button>
       <button

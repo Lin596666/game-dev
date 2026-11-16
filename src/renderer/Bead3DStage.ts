@@ -8,6 +8,7 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { colorById } from '@/core/colors'
+import { finishById, type IronFinishId } from '@/core/iron'
 import type { BeadGrid } from '@/core/grid'
 
 /** 珠子外径 / 内孔半径 / 高度，单位是"一格 = 1" */
@@ -48,7 +49,8 @@ export class Bead3DStage {
   /** InstancedMesh 预先开好的实例上限，图纸尺寸变了才重建 */
   private capacity = 0
   /** 熨烫模式：珠子被压扁，看起来像成品 */
-  private ironed = false
+  private finishId: IronFinishId = 'raw'
+  private flatten = 1
   private keyLight!: THREE.DirectionalLight
 
   constructor(host: HTMLElement, cb: Stage3DCallbacks = {}) {
@@ -255,10 +257,10 @@ export class Bead3DStage {
         if (!id) continue
         this.dummy.position.set(
           x - g.width / 2 + 0.5,
-          this.ironed ? (BEAD_H * 0.3) / 2 : BEAD_H / 2,
+          (BEAD_H * this.flatten) / 2,
           y - g.height / 2 + 0.5
         )
-        this.dummy.scale.set(1, this.ironed ? 0.3 : 1, 1)
+        this.dummy.scale.set(1, this.flatten, 1)
         this.dummy.updateMatrix()
         beads.setMatrixAt(n, this.dummy.matrix)
         beads.setColorAt(n, this.colorOf(id))
@@ -332,13 +334,15 @@ export class Bead3DStage {
     this.controls.autoRotate = on
   }
 
-  /** 熨烫：把珠子压扁、磨砂一点，看成品效果 */
-  setIroned(on: boolean): void {
-    if (this.ironed === on) return
-    this.ironed = on
-    this.material.roughness = on ? 0.66 : 0.42
-    this.material.metalness = on ? 0 : 0.02
-    this.hover.position.y = (on ? BEAD_H * 0.3 : BEAD_H) + 0.02
+  /** 烫法：把珠子按 finished 的比例压扁、调材质，看成品效果 */
+  setFinish(id: IronFinishId): void {
+    const f = finishById(id)
+    if (this.finishId === id) return
+    this.finishId = id
+    this.flatten = f.flatten
+    this.material.roughness = f.roughness
+    this.material.metalness = f.sparkle > 0 ? 0.12 : 0.02
+    this.hover.position.y = BEAD_H * f.flatten + 0.02
     this.rebuildBeads()
   }
 

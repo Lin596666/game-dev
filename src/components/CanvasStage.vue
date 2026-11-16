@@ -304,7 +304,8 @@ onMounted(() => {
     showGrid: store.showGrid,
     showNumbers: store.showNumbers,
     showRulers: true,
-    paperColor: '#FBF7F1'
+    paperColor: '#FBF7F1',
+    finish: store.finish
   })
 
   const resize = () => {
@@ -355,12 +356,13 @@ watch(
 )
 
 watch(
-  () => [store.style, store.showGrid, store.showNumbers],
+  () => [store.style, store.showGrid, store.showNumbers, store.finish],
   () => {
     renderer?.setOptions({
       style: store.style,
       showGrid: store.showGrid,
-      showNumbers: store.showNumbers
+      showNumbers: store.showNumbers,
+      finish: store.finish
     })
   }
 )

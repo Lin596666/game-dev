@@ -10,6 +10,7 @@ import { planPrint } from './print'
 import { createProjectFile, parseProjectFile, parseProjectText } from './project'
 import { purchaseText, stockReport } from './stock'
 import { nextRestIn, restMilestone } from './session'
+import { IRON_FINISHES, RAINBOW_COLORS, finishById, sparkleAt } from './iron'
 import { decodeShare, encodeShare, shareCodeFromUrl, shareUrl } from './share'
 
 describe('BeadGrid', () => {
@@ -365,3 +366,47 @@ describe('久坐提醒', () => {
   })
 })
 
+
+describe('烫法（成品效果）', () => {
+  it('七种烫法都能按 id 取到，未烫不压扁', () => {
+    expect(IRON_FINISHES).toHaveLength(7)
+    expect(finishById('raw').ironed).toBe(false)
+    expect(finishById('raw').flatten).toBe(1)
+    for (const f of IRON_FINISHES) {
+      expect(finishById(f.id).name).toBe(f.name)
+    }
+  })
+
+  it('闪粉按格子稳定出现：同格重复调用结果一致', () => {
+    const f = finishById('fine')
+    const a = sparkleAt(12, 30, f)
+    const b = sparkleAt(12, 30, f)
+    expect(a).toEqual(b)
+    expect(a.px).toBeGreaterThanOrEqual(0)
+    expect(a.px).toBeLessThanOrEqual(1)
+  })
+
+  it('未烫和布烫不闪，覆盖率越高闪的格子越多', () => {
+    expect(sparkleAt(1, 1, finishById('raw')).on).toBe(false)
+    expect(sparkleAt(1, 1, finishById('cloth')).on).toBe(false)
+    let coarse = 0
+    let fine = 0
+    for (let i = 0; i < 400; i++) {
+      if (sparkleAt(i, i * 7, finishById('coarse')).on) coarse++
+      if (sparkleAt(i, i * 7, finishById('fine')).on) fine++
+    }
+    expect(fine).toBeGreaterThan(coarse)
+  })
+
+  it('彩虹闪粉的色相落在六档之内', () => {
+    const f = finishById('rainbowFine')
+    for (let i = 0; i < 200; i++) {
+      const sp = sparkleAt(i, 3, f)
+      if (sp.on) {
+        expect(sp.hue).toBeGreaterThanOrEqual(0)
+        expect(sp.hue).toBeLessThanOrEqual(5)
+      }
+    }
+    expect(RAINBOW_COLORS).toHaveLength(6)
+  })
+})

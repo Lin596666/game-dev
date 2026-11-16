@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { COLOR_SETS, groupedColors, type ColorSetId } from '@/core/colors'
+import { IRON_FINISHES } from '@/core/iron'
 import { useEditorStore, type Symmetry } from '@/store/editor'
 
 const store = useEditorStore()
@@ -168,6 +169,24 @@ function applyFitOwned(): void {
           <button :class="{ on: store.style === 'flat' }" @click="store.style = 'flat'">平铺</button>
           <button :class="{ on: store.style === 'chart' }" @click="store.style = 'chart'">图纸</button>
         </div>
+
+        <div class="panel-head" style="margin-top: 14px">
+          <span class="panel-title">烫法 · 成品效果</span>
+          <span class="panel-sub">{{ store.finishInfo.name }}</span>
+        </div>
+        <div class="finish-grid">
+          <button
+            v-for="f in IRON_FINISHES"
+            :key="f.id"
+            class="finish-chip"
+            :class="{ on: store.finish === f.id }"
+            :title="f.desc"
+            @click="store.setFinish(f.id)"
+          >
+            {{ f.name }}
+          </button>
+        </div>
+        <p class="hint" style="margin: 6px 0 0">{{ store.finishInfo.desc }}</p>
         <label class="usage-item" style="cursor: pointer" @click.prevent="store.showGrid = !store.showGrid">
           <input type="checkbox" :checked="store.showGrid" />
           显示网格线

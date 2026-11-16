@@ -1,5 +1,6 @@
 import { colorById, inkOn } from '@/core/colors'
 import { EMPTY, type BeadGrid } from '@/core/grid'
+import { RAINBOW_COLORS, finishById, sparkleAt, type IronFinishId } from '@/core/iron'
 import { colorUsage, totalBeads } from '@/core/pattern'
 
 /** 导出：PNG（纯净 / 网格 / 编号）、色号清单 CSV */
@@ -13,6 +14,8 @@ export interface ExportPngOptions {
   crop: boolean
   paperColor: string
   name: string
+  /** 烫法：熨过的成品会多一圈高光和闪粉 */
+  finish?: IronFinishId
 }
 
 export interface ExportResult {
@@ -77,8 +80,60 @@ export function renderPng(grid: BeadGrid, options: ExportPngOptions): ExportResu
     }
   }
 
-  if (options.showGrid && px >= 6) {
+  // 熨过的成品：每颗压成方糖状（上亮下暗），带闪粉的再撒一层亮点
+  const finish = options.finish ? finishById(options.finish) : null
+  if (finish && finish.ironed) {
+    const pad = Math.max(0.5, px * 0.07)
+    const light = new Path2D()
+    const dark = new Path2D()
+    const plain = new Path2D()
+    const rainbow = RAINBOW_COLORS.map(() => new Path2D())
+    for (let y = 0; y < c.h; y++) {
+      for (let x = 0; x < c.w; x++) {
+        if (grid.get(c.x + x, c.y + y) === EMPTY) continue
+        const bx = originX + x * px
+        const by = originY + y * px
+        light.moveTo(bx + pad, by + px - pad)
+        light.lineTo(bx + pad, by + pad)
+        light.lineTo(bx + px - pad, by + pad)
+        dark.moveTo(bx + pad, by + px - pad)
+        dark.lineTo(bx + px - pad, by + px - pad)
+        dark.lineTo(bx + px - pad, by + pad)
+        const sp = sparkleAt(x, y, finish)
+        if (!sp.on) continue
+        const cx = bx + sp.px * px
+        const cy = by + sp.py * px
+        const r = Math.max(0.6, sp.size * px * 0.5)
+        const path = finish.rainbow ? rainbow[sp.hue]! : plain
+        path.moveTo(cx + r, cy)
+        path.arc(cx, cy, r, 0, Math.PI * 2)
+      }
+    }
     ctx.save()
+    ctx.lineCap = 'round'
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'
+    ctx.lineWidth = Math.max(1, px * 0.055)
+    ctx.stroke(light)
+    ctx.strokeStyle = 'rgba(58, 52, 46, 0.10)'
+    ctx.lineWidth = Math.max(1, px * 0.05)
+    ctx.stroke(dark)
+    if (finish.rainbow) {
+      rainbow.forEach((path, i) => {
+        ctx.globalAlpha = 0.9
+        ctx.fillStyle = RAINBOW_COLORS[i]!
+        ctx.fill(path)
+      })
+      ctx.globalAlpha = 1
+    } else if (finish.sparkle > 0) {
+      ctx.globalAlpha = 0.8
+      ctx.fillStyle = '#FFFFFF'
+      ctx.fill(plain)
+      ctx.globalAlpha = 1
+    }
+    ctx.restore()
+  }
+
+  if (options.showGrid && px >= 6) {    ctx.save()
     ctx.strokeStyle = 'rgba(74, 60, 46, 0.16)'
     ctx.lineWidth = 1
     ctx.beginPath()

@@ -7,6 +7,7 @@ import { fitToColorSet, fitToColors, type FitResult } from '@/core/palette'
 import { colorUsage, estimateCost } from '@/core/pattern'
 import { gridPhysicalInfo } from '@/core/physical'
 import { stockReport, type StockMap } from '@/core/stock'
+import { IRON_FINISHES, finishById, type IronFinishId } from '@/core/iron'
 import { playBeadTick, playChime } from '@/core/sound'
 import {
   REST_EVERY_MINUTES as REST_EVERY,
@@ -78,6 +79,29 @@ export const useEditorStore = defineStore('editor', () => {
   const style = ref<CanvasStyle>('bead')
   const showGrid = ref(true)
   const showNumbers = ref(false)
+  /** 烫法：决定画布上画的是圆珠还是熨过的成品 */
+  const FINISH_KEY = 'bead:finish'
+  const finish = ref<IronFinishId>(loadFinish())
+  const finishInfo = computed(() => finishById(finish.value))
+
+  function loadFinish(): IronFinishId {
+    try {
+      const raw = localStorage.getItem(FINISH_KEY)
+      if (raw && IRON_FINISHES.some((f) => f.id === raw)) return raw as IronFinishId
+    } catch {
+      /* 忽略，用默认 */
+    }
+    return 'raw'
+  }
+
+  function setFinish(id: IronFinishId): void {
+    finish.value = id
+    try {
+      localStorage.setItem(FINISH_KEY, id)
+    } catch {
+      /* 存不了不影响本次 */
+    }
+  }
 
   // 选择区
   const selection = ref<Selection | null>(null)
@@ -844,6 +868,9 @@ export const useEditorStore = defineStore('editor', () => {
     style,
     showGrid,
     showNumbers,
+    finish,
+    finishInfo,
+    setFinish,
     selection,
     // 跟拼
     guideMode,

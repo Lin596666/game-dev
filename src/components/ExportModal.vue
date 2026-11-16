@@ -31,7 +31,8 @@ function buildPreview(): void {
       transparent: transparent.value,
       paperColor: '#FBF7F1',
       crop: crop.value,
-      name: store.docName
+      name: store.docName,
+      finish: store.finish
     })
     preview.value = canvas.toDataURL('image/png')
   } catch {
@@ -52,7 +53,8 @@ async function exportPng(): Promise<void> {
       transparent: transparent.value,
       paperColor: '#FBF7F1',
       crop: crop.value,
-      name: store.docName
+      name: store.docName,
+      finish: store.finish
     })
     const blob = await canvasToBlob(canvas)
     downloadBlob(blob, `${safeName.value}.png`)

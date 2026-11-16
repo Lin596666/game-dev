@@ -1,5 +1,6 @@
 import { colorById, inkOn } from '@/core/colors'
 import { EMPTY, type BeadGrid } from '@/core/grid'
+import { RAINBOW_COLORS, finishById, sparkleAt, type IronFinishId } from '@/core/iron'
 
 /**
  * 拼豆画布渲染器（Canvas 2D，命令式，不参与框架响应式）
@@ -25,6 +26,8 @@ export interface RenderOptions {
   showNumbers: boolean
   showRulers: boolean
   paperColor: string
+  /** 成品效果：未烫 / 布烫 / 烤纸烫 / 闪粉系列 */
+  finish: IronFinishId
 }
 
 export interface PreviewPatch {
@@ -69,7 +72,8 @@ export class BeadRenderer {
     showGrid: true,
     showNumbers: false,
     showRulers: true,
-    paperColor: '#FBF7F1'
+    paperColor: '#FBF7F1',
+    finish: 'raw'
   }
   private preview: PreviewPatch | null = null
   private selection: SelectionRect | null = null
@@ -273,8 +277,10 @@ export class BeadRenderer {
       ctx.drawImage(bmp, 0, 0, g.width, g.height, ox, oy, g.width * z, g.height * z)
     }
 
-    if (this.options.style === 'bead' && z >= HOLE_MIN_ZOOM) {
-      this.drawBeadDetail(g, ox, oy, z, x0, y0, x1, y1)
+    if (this.options.style === 'bead') {
+      const finish = finishById(this.options.finish)
+      if (finish.ironed) this.drawIronDetail(g, ox, oy, z, x0, y0, x1, y1)
+      else if (z >= HOLE_MIN_ZOOM) this.drawBeadDetail(g, ox, oy, z, x0, y0, x1, y1)
     }
     if (this.options.style !== 'chart') {
       this.drawGuide(g, ox, oy, z, x0, y0, x1, y1)
@@ -288,6 +294,80 @@ export class BeadRenderer {
     this.drawPreview(ctx, ox, oy, z)
     this.drawSelection(ox, oy, z)
     this.drawRulers(g, ox, oy, z, x0, y0, x1, y1)
+  }
+
+  /**
+   * 熨烫后的质感：豆孔消失、每颗被压成方糖状，边缘一圈高光/暗边，
+   * 带闪粉的烫法再撒一层固定的亮点（同一个格子永远闪在同一个位置）。
+   */
+  private drawIronDetail(
+    g: BeadGrid,
+    ox: number,
+    oy: number,
+    z: number,
+    x0: number,
+    y0: number,
+    x1: number,
+    y1: number
+  ): void {
+    const finish = finishById(this.options.finish)
+    if (z < 3) return
+    const ctx = this.ctx
+    const pad = Math.max(0.4, z * 0.07)
+    const light = new Path2D()
+    const dark = new Path2D()
+    const plain = new Path2D()
+    const rainbow = RAINBOW_COLORS.map(() => new Path2D())
+
+    for (let y = y0; y <= y1; y++) {
+      for (let x = x0; x <= x1; x++) {
+        if (g.get(x, y) === EMPTY) continue
+        const px = ox + x * z
+        const py = oy + y * z
+        // 上边与左边亮、右边与下边暗，压扁的塑料才有这个转折
+        light.moveTo(px + pad, py + z - pad)
+        light.lineTo(px + pad, py + pad)
+        light.lineTo(px + z - pad, py + pad)
+        dark.moveTo(px + pad, py + z - pad)
+        dark.lineTo(px + z - pad, py + z - pad)
+        dark.lineTo(px + z - pad, py + pad)
+
+        const sp = sparkleAt(x, y, finish)
+        if (!sp.on) continue
+        const cx = px + sp.px * z
+        const cy = py + sp.py * z
+        const r = Math.max(0.5, sp.size * z * 0.5)
+        const path = finish.rainbow ? rainbow[sp.hue]! : plain
+        path.moveTo(cx + r, cy)
+        path.arc(cx, cy, r, 0, Math.PI * 2)
+      }
+    }
+
+    ctx.save()
+    ctx.lineCap = 'round'
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'
+    ctx.lineWidth = Math.max(0.6, z * 0.055)
+    ctx.stroke(light)
+    ctx.strokeStyle = 'rgba(58, 52, 46, 0.10)'
+    ctx.lineWidth = Math.max(0.6, z * 0.05)
+    ctx.stroke(dark)
+
+    if (finish.sparkle > 0 && z >= 4) {
+      if (finish.rainbow) {
+        rainbow.forEach((path, i) => {
+          ctx.fillStyle = RAINBOW_COLORS[i]!
+          ctx.globalAlpha = 0.9
+          ctx.fill(path)
+        })
+        ctx.globalAlpha = 1
+      } else {
+        ctx.fillStyle = '#FFFFFF'
+        ctx.globalAlpha = 0.8
+        ctx.fill(plain)
+        ctx.globalAlpha = 1
+      }
+    }
+    ctx.restore()
   }
 
   /** 珠子质感：孔洞 + 顶部高光 + 轻微内阴影 */
