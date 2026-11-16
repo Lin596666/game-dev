@@ -19,6 +19,8 @@ export interface ProjectFile {
   finish?: string
   createdAt: number
   updatedAt: number
+  /** 第一次把整张图纸拼完的时间（拼豆日记用） */
+  completedAt?: number
 }
 
 export function bytesToBase64(bytes: Uint8Array): string {
@@ -71,6 +73,7 @@ export function createProjectFile(
     done?: Uint8Array
     finish?: string
     createdAt?: number
+    completedAt?: number
   }
 ): ProjectFile {
   const now = Date.now()
@@ -85,7 +88,8 @@ export function createProjectFile(
     pricePerBead: meta.pricePerBead,
     finish: meta.finish,
     createdAt: meta.createdAt ?? now,
-    updatedAt: now
+    updatedAt: now,
+    completedAt: meta.completedAt
   }
 }
 
@@ -98,6 +102,7 @@ export interface ParsedProject {
   finish: string | null
   createdAt: number
   updatedAt: number
+  completedAt: number | null
 }
 
 export function parseProjectFile(raw: unknown): ParsedProject {
@@ -121,7 +126,8 @@ export function parseProjectFile(raw: unknown): ParsedProject {
     pricePerBead: doc.pricePerBead ?? 0.03,
     finish: typeof doc.finish === 'string' ? doc.finish : null,
     createdAt: doc.createdAt ?? Date.now(),
-    updatedAt: doc.updatedAt ?? Date.now()
+    updatedAt: doc.updatedAt ?? Date.now(),
+    completedAt: typeof doc.completedAt === 'number' ? doc.completedAt : null
   }
 }
 

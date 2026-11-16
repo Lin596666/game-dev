@@ -1913,3 +1913,13 @@ canvas,
   opacity: 0.55;
   cursor: default;
 }
+
+/* 拼豆日记：作品上记录的完成日期与用时 */
+.piece-diary {
+  color: var(--ink-2) !important;
+  opacity: 0.85;
+}
+.done-tag {
+  color: var(--matcha) !important;
+  font-weight: 600;
+}

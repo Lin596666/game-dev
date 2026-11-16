@@ -56,6 +56,12 @@ function finishName(id?: string): string {
   return f && f.id !== 'raw' ? f.name : ''
 }
 
+function doneText(p: ProjectSummary): string {
+  if (!p.completedAt) return ''
+  const d = new Date(p.completedAt)
+  return '已完成 · ' + (d.getMonth() + 1) + '月' + d.getDate() + '日'
+}
+
 function fmt(ts: number): string {
   const d = new Date(ts)
   const p = (n: number) => String(n).padStart(2, '0')
@@ -130,6 +136,7 @@ async function onFile(e: Event): Promise<void> {
           <div v-else class="n">{{ p.name }}</div>
           <div class="d">{{ p.width }}×{{ p.height }}{{ p.beads ? ' · ' + p.beads + ' 颗' : '' }} · {{ fmt(p.updatedAt) }}</div>
           <div v-if="finishName(p.finish)" class="d">{{ finishName(p.finish) }}</div>
+          <div v-if="p.completedAt" class="d done-tag">{{ doneText(p) }}</div>
           <div style="display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap">
             <button class="btn sm" :title="p.starred ? '取消收藏' : '收藏进作品册'" @click="toggleStar(p)">
               {{ p.starred ? '★' : '☆' }}

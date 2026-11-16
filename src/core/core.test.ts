@@ -496,3 +496,21 @@ describe('图片转图纸：去掉背景', () => {
     expect(res.data[0]).toBeGreaterThan(0)
   })
 })
+
+describe('拼豆日记：完成时间', () => {
+  it('拼完时间能随工程文件存取', () => {
+    const g = new BeadGrid(6, 6)
+    g.set(1, 1, 2)
+    const when = Date.now()
+    const file = createProjectFile(g, { id: 'x', name: '日记', completedAt: when })
+    const parsed = parseProjectFile(JSON.parse(JSON.stringify(file)))
+    expect(parsed.completedAt).toBe(when)
+  })
+
+  it('没拼完时是 null，老文件也不会报错', () => {
+    const g = new BeadGrid(4, 4)
+    const file = createProjectFile(g, { id: 'y', name: '未完成' })
+    const parsed = parseProjectFile(JSON.parse(JSON.stringify(file)))
+    expect(parsed.completedAt).toBeNull()
+  })
+})

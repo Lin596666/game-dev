@@ -8,7 +8,8 @@ import {
   downloadText,
   renderPng,
   renderShareCard,
-  renderWallShot
+  renderWallShot,
+  renderPatternSheet
 } from '@/renderer/export'
 import Modal from './Modal.vue'
 
@@ -64,6 +65,23 @@ async function exportCard(): Promise<void> {
     message.value = '分享卡片已下载（1080×1350）'
   } catch (err) {
     message.value = err instanceof Error ? err.message : '生成分享卡失败'
+  } finally {
+    busy.value = false
+  }
+}
+
+async function exportSheet(): Promise<void> {
+  busy.value = true
+  try {
+    const { canvas } = renderPatternSheet(store.grid, {
+      name: store.docName || '拼豆图纸',
+      finish: store.finish
+    })
+    const blob = await canvasToBlob(canvas)
+    downloadBlob(blob, safeName.value + '-图纸页.png')
+    message.value = '图纸页已下载（A4 比例 1240×1754）'
+  } catch (err) {
+    message.value = err instanceof Error ? err.message : '生成图纸页失败'
   } finally {
     busy.value = false
   }
@@ -182,6 +200,7 @@ async function saveNow(): Promise<void> {
       <button class="btn" @click="emit('close')">关闭</button>
       <button class="btn" @click="exportCard">分享卡片</button>
       <button class="btn" @click="exportWall">挂墙效果图</button>
+      <button class="btn" @click="exportSheet">图纸页</button>
       <button class="btn" @click="exportList">色号清单</button>
       <button class="btn" @click="exportProject">工程文件</button>
       <button class="btn" @click="saveNow">保存到本机</button>

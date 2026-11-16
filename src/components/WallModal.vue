@@ -57,6 +57,14 @@ const shown = computed(() => {
 const totalBeads = computed(() => list.value.reduce((n, p) => n + (p.beads ?? 0), 0))
 const starredCount = computed(() => list.value.filter((p) => p.starred).length)
 
+function diary(p: ProjectSummary): string {
+  if (!p.completedAt) return '还在拼'
+  const d = new Date(p.completedAt)
+  const days = Math.max(1, Math.round((p.completedAt - p.createdAt) / 86400000))
+  const date = d.getMonth() + 1 + '月' + d.getDate() + '日'
+  return '完成于 ' + date + ' · 用了 ' + days + ' 天'
+}
+
 function finishName(id?: string): string {
   if (!id) return ''
   const f = IRON_FINISHES.find((x) => x.id === id)
@@ -165,6 +173,7 @@ onMounted(refresh)
           <strong>{{ p.name }}</strong>
           <span>{{ p.width }}×{{ p.height }} · {{ p.beads ?? 0 }} 颗</span>
           <span class="piece-finish">{{ finishName(p.finish) }}</span>
+          <span class="piece-diary">{{ diary(p) }}</span>
         </div>
         <button class="piece-share" :disabled="busyId === p.id" @click.stop="cardFor(p)">
           {{ busyId === p.id ? '生成中' : '存分享卡' }}

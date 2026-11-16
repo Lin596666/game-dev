@@ -2,8 +2,14 @@ import { colorById, inkOn } from '@/core/colors'
 import { EMPTY, type BeadGrid } from '@/core/grid'
 import { RAINBOW_COLORS, finishById, sparkleAt, type IronFinishId } from '@/core/iron'
 import { colorUsage, totalBeads } from '@/core/pattern'
+import { physicalInfo } from '@/core/physical'
 
 /** 导出：PNG（纯净 / 网格 / 编号）、色号清单 CSV */
+
+export interface PatternSheetOptions {
+  name: string
+  finish?: IronFinishId
+}
 
 export interface ExportPngOptions {
   pxPerCell: number
@@ -487,6 +493,167 @@ export function renderWallShot(grid: BeadGrid, options: ShareCardOptions): Share
   ctx.fillStyle = 'rgba(106, 92, 72, 0.55)'
   ctx.font = '400 24px "PingFang SC", "Microsoft YaHei", sans-serif'
   ctx.fillText('拼豆工房 · Bead Atelier', W / 2, H - 64)
+
+  return { canvas, width: W, height: H }
+}
+
+/**
+ * 图纸页：A4 比例的「一张图」，上面是图纸本身，下面是色号图例、每色颗数与成品尺寸估算。
+ * 打印出来可以直接照着拼，发到群里别人也能看懂怎么买豆子。
+ */
+export function renderPatternSheet(grid: BeadGrid, options: PatternSheetOptions): ShareCardResult {
+  const W = 1240
+  const H = 1754
+  const canvas = document.createElement('canvas')
+  canvas.width = W
+  canvas.height = H
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('导出失败：无法创建画布')
+
+  ctx.fillStyle = '#FFFFFF'
+  ctx.fillRect(0, 0, W, H)
+
+  const pad = 72
+  const c = cropBounds(grid)
+  const usage = colorUsage(grid)
+  const beads = totalBeads(grid)
+  const info = physicalInfo(grid.width, grid.height)
+
+  // 标题
+  ctx.textAlign = 'left'
+  ctx.fillStyle = '#3A342E'
+  ctx.font = '600 52px "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif SC", serif'
+  ctx.fillText(options.name || '拼豆图纸', pad, pad + 46)
+
+  ctx.fillStyle = '#8C8378'
+  ctx.font = '400 26px "PingFang SC", "Microsoft YaHei", sans-serif'
+  const meta = [
+    grid.width + '×' + grid.height,
+    beads + ' 颗',
+    info.widthCm + ' × ' + info.heightCm + ' cm',
+    info.boards + ' 块豆板',
+    usage.length + ' 种颜色'
+  ]
+  ctx.fillText(meta.join(' · '), pad, pad + 92)
+
+  ctx.strokeStyle = '#E4DBCD'
+  ctx.lineWidth = 2
+  ctx.beginPath()
+  ctx.moveTo(pad, pad + 118)
+  ctx.lineTo(W - pad, pad + 118)
+  ctx.stroke()
+
+  // 图纸：留出下方图例的空间，宽高都不得超过可用区
+  const artTop = pad + 152
+  const artMaxW = W - pad * 2
+  const artMaxH = 900
+  const px = Math.max(1, Math.floor(Math.min(artMaxW / c.w, artMaxH / c.h)))
+  const artW = c.w * px
+  const artH = c.h * px
+  const artX = Math.round((W - artW) / 2)
+  const artY = Math.round(artTop + (artMaxH - artH) / 2)
+  const showNumbers = px >= 16
+
+  ctx.fillStyle = '#FBF7F1'
+  ctx.fillRect(artX - 12, artY - 12, artW + 24, artH + 24)
+
+  const finish = finishById(options.finish ?? 'raw')
+
+  for (let y = 0; y < c.h; y++) {
+    for (let x = 0; x < c.w; x++) {
+      const gx = c.x + x
+      const gy = c.y + y
+      const id = grid.get(gx, gy)
+      const px0 = artX + x * px
+      const py0 = artY + y * px
+      if (id === EMPTY) {
+        ctx.fillStyle = '#FFFFFF'
+        ctx.fillRect(px0, py0, px, px)
+        continue
+      }
+      const color = colorById(id)
+      if (!color) continue
+      ctx.fillStyle = color.hex
+      ctx.fillRect(px0, py0, px, px)
+
+      if (finish.ironed) {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.42)'
+        ctx.fillRect(px0, py0, px, Math.max(1, px * 0.14))
+        ctx.fillRect(px0, py0, Math.max(1, px * 0.14), px)
+      }
+      if (finish.sparkle > 0) {
+        const sp = sparkleAt(gx, gy, finish)
+        if (sp.on) {
+          ctx.fillStyle = finish.rainbow
+            ? RAINBOW_COLORS[sp.hue % RAINBOW_COLORS.length]!
+            : 'rgba(255, 255, 255, 0.9)'
+          ctx.fillRect(
+            px0 + sp.px * px,
+            py0 + sp.py * px,
+            Math.max(1, (px * sp.size) / 100),
+            Math.max(1, (px * sp.size) / 100)
+          )
+        }
+      }
+      if (showNumbers) {
+        ctx.fillStyle = inkOn(color.hex)
+        ctx.font = '500 ' + Math.max(8, Math.floor(px * 0.32)) + 'px "PingFang SC", sans-serif'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillText(color.code, px0 + px / 2, py0 + px / 2)
+      }
+    }
+  }
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'alphabetic'
+
+  // 网格线
+  ctx.strokeStyle = 'rgba(58, 52, 46, 0.12)'
+  ctx.lineWidth = 1
+  for (let x = 0; x <= c.w; x++) {
+    ctx.beginPath()
+    ctx.moveTo(artX + x * px + 0.5, artY)
+    ctx.lineTo(artX + x * px + 0.5, artY + artH)
+    ctx.stroke()
+  }
+  for (let y = 0; y <= c.h; y++) {
+    ctx.beginPath()
+    ctx.moveTo(artX, artY + y * px + 0.5)
+    ctx.lineTo(artX + artW, artY + y * px + 0.5)
+    ctx.stroke()
+  }
+
+  // 图例：两列
+  const legendTop = artY + artH + 56
+  ctx.fillStyle = '#3A342E'
+  ctx.font = '600 30px "Hiragino Mincho ProN", "Yu Mincho", serif'
+  ctx.fillText('颜色清单', pad, legendTop)
+
+  const colW = (W - pad * 2) / 2
+  const rowH = 40
+  const rowsPerCol = Math.min(Math.ceil(usage.length / 2), Math.floor((H - legendTop - 120) / rowH))
+  ctx.font = '400 22px "PingFang SC", "Microsoft YaHei", sans-serif'
+
+  usage.forEach((u, i) => {
+    const col = Math.floor(i / Math.max(1, rowsPerCol))
+    if (col > 1) return
+    const row = i % rowsPerCol
+    const x = pad + col * colW
+    const y = legendTop + 34 + row * rowH
+    ctx.fillStyle = u.color.hex
+    ctx.fillRect(x, y - 18, 24, 24)
+    ctx.strokeStyle = 'rgba(58, 52, 46, 0.25)'
+    ctx.lineWidth = 1
+    ctx.strokeRect(x + 0.5, y - 17.5, 23, 23)
+    ctx.fillStyle = '#3A342E'
+    ctx.fillText(u.color.code + '  ' + u.color.name, x + 36, y)
+    ctx.fillStyle = '#8C8378'
+    ctx.fillText('×' + u.count, x + colW - 96, y)
+  })
+
+  ctx.fillStyle = '#B3AA9E'
+  ctx.font = '400 22px "PingFang SC", "Microsoft YaHei", sans-serif'
+  ctx.fillText('拼豆工房 · Bead Atelier · 色号为屏幕近似，购买时以实物色卡为准', pad, H - 56)
 
   return { canvas, width: W, height: H }
 }

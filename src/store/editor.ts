@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { computed, ref, shallowRef } from 'vue'
+import { computed, ref, shallowRef, watch } from 'vue'
 import { COLORS, colorById, type BeadColor, type ColorSetId } from '@/core/colors'
 import { BeadGrid, EMPTY } from '@/core/grid'
 import { UndoStack, diffSnapshot } from '@/core/history'
@@ -283,6 +283,14 @@ export const useEditorStore = defineStore('editor', () => {
   })
   const progress = computed(() => (total.value === 0 ? 0 : doneCount.value / total.value))
 
+  // ---------- 拼豆日记：第一次拼完的时间 ----------
+  const completedAt = ref<number | null>(null)
+
+  function noteCompletion(): void {
+    if (completedAt.value !== null) return
+    if (total.value > 0 && doneCount.value >= total.value) completedAt.value = Date.now()
+  }
+
   // ---------- 里程碑：拼到 1/4、1/2、3/4、完成时给一句鼓励 ----------
   const milestone = ref('')
   const hitMarks = new Set<number>()
@@ -434,6 +442,7 @@ export const useEditorStore = defineStore('editor', () => {
   }
 
   async function persist(): Promise<void> {
+    noteCompletion()
     const g = grid.value
     const file = createProjectFile(g, {
       id: docId.value,
@@ -441,7 +450,8 @@ export const useEditorStore = defineStore('editor', () => {
       pricePerBead: pricePerBead.value,
       done,
       finish: finish.value,
-      createdAt: createdAt.value
+      createdAt: createdAt.value,
+      completedAt: completedAt.value ?? undefined
     })
     try {
       await saveProject({
@@ -454,7 +464,8 @@ export const useEditorStore = defineStore('editor', () => {
         payload: JSON.stringify(file),
         thumb: g.usedCount() > 0 ? renderThumbnail(g, 200) : undefined,
         beads: g.usedCount(),
-        finish: finish.value
+        finish: finish.value,
+        completedAt: completedAt.value ?? undefined
       })
       lastSavedAt.value = Date.now()
       dirty.value = false
@@ -462,6 +473,14 @@ export const useEditorStore = defineStore('editor', () => {
       console.warn('自动保存失败', err)
     }
   }
+
+  watch(
+    () => doneCount.value,
+    () => {
+      void doneVersion.value
+      noteCompletion()
+    }
+  )
 
   // ---------- 绘制 ----------
 
@@ -717,6 +736,7 @@ export const useEditorStore = defineStore('editor', () => {
     resetDone()
     hitMarks.clear()
     milestone.value = ''
+    completedAt.value = null
     undoStack.clear()
     historyVersion.value++
     gridVersion.value++
@@ -739,6 +759,7 @@ export const useEditorStore = defineStore('editor', () => {
     docId.value = parsed.id
     docName.value = parsed.name
     createdAt.value = parsed.createdAt
+    completedAt.value = parsed.completedAt
     pricePerBead.value = parsed.pricePerBead
     if (parsed.finish && IRON_FINISHES.some((f) => f.id === parsed.finish)) {
       finish.value = parsed.finish as IronFinishId
@@ -968,6 +989,7 @@ export const useEditorStore = defineStore('editor', () => {
     focusFirstRemaining,
     doneCount,
     progress,
+    completedAt,
     // 派生
     usage,
     total,
