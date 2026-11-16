@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { defineAsyncComponent, onBeforeUnmount, onMounted, ref } from 'vue'
 import { BeadGrid } from '@/core/grid'
 import { LIBRARY } from '@/core/library'
 import { useEditorStore, type ToolId } from '@/store/editor'
@@ -13,6 +13,9 @@ import ProjectsModal from './components/ProjectsModal.vue'
 import ImportImageModal from './components/ImportImageModal.vue'
 import ExportModal from './components/ExportModal.vue'
 
+// 3D 预览整块按需加载，three.js 只在真正打开时才下载
+const Scene3DModal = defineAsyncComponent(() => import('./components/Scene3DModal.vue'))
+
 const store = useEditorStore()
 
 const showNew = ref(false)
@@ -20,6 +23,7 @@ const showLibrary = ref(false)
 const showProjects = ref(false)
 const showImport = ref(false)
 const showExport = ref(false)
+const showScene3D = ref(false)
 const panelOpen = ref(false)
 
 const toastText = ref('')
@@ -37,6 +41,7 @@ function closeAll(): void {
   showProjects.value = false
   showImport.value = false
   showExport.value = false
+  showScene3D.value = false
 }
 
 function createProject(payload: { name: string; width: number; height: number }): void {
@@ -144,6 +149,7 @@ onBeforeUnmount(() => {
       @projects="showProjects = true"
       @import-image="showImport = true"
       @export-panel="showExport = true"
+      @scene3d="showScene3D = true"
       @toggle-panel="panelOpen = !panelOpen"
     />
 
@@ -158,6 +164,7 @@ onBeforeUnmount(() => {
     <ProjectsModal v-if="showProjects" @close="showProjects = false" @open="openProject" />
     <ImportImageModal v-if="showImport" @close="showImport = false" @apply="applyImport" />
     <ExportModal v-if="showExport" @close="showExport = false" />
+    <Scene3DModal v-if="showScene3D" @close="showScene3D = false" />
 
     <div v-if="toastText" class="toast">{{ toastText }}</div>
   </div>

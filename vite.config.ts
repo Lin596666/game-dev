@@ -25,6 +25,15 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,woff2}'],
+        // three.js 的 3D 预览 chunk 很大，不放进首屏预缓存，改成用到时候再缓存
+        globIgnores: ['**/three.module-*.js'],
+        runtimeCaching: [
+          {
+            urlPattern: /\/assets\/three\.module-.*\.js$/,
+            handler: 'StaleWhileRevalidate',
+            options: { cacheName: 'bead-three' }
+          }
+        ],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024
       }
     })
@@ -36,6 +45,8 @@ export default defineConfig({
   },
   build: {
     target: 'es2020',
-    cssCodeSplit: false
+    cssCodeSplit: false,
+    // three.js 是懒加载的独立 chunk（约 690KB），首屏不受影响，单独放宽告警阈值
+    chunkSizeWarningLimit: 900
   }
 })
