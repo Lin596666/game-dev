@@ -7,7 +7,7 @@ import Modal from './Modal.vue'
 
 const store = useEditorStore()
 
-const emit = defineEmits<{ (e: 'close'): void }>()
+const emit = defineEmits<{ (e: 'close'): void; (e: 'share'): void }>()
 
 const pxPerCell = ref(12)
 const showGrid = ref(false)
@@ -134,6 +134,7 @@ async function saveNow(): Promise<void> {
       <button class="btn" @click="exportList">色号清单</button>
       <button class="btn" @click="exportProject">工程文件</button>
       <button class="btn" @click="saveNow">保存到本机</button>
+      <button class="btn" @click="emit('share')">分享给朋友</button>
       <button class="btn primary" :disabled="busy || !store.total" @click="exportPng">
         {{ busy ? '导出中…' : '下载 PNG' }}
       </button>

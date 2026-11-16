@@ -8,6 +8,11 @@ import { colorUsage, estimateCost } from '@/core/pattern'
 import { gridPhysicalInfo } from '@/core/physical'
 import { stockReport, type StockMap } from '@/core/stock'
 import { playBeadTick, playChime } from '@/core/sound'
+import {
+  REST_EVERY_MINUTES as REST_EVERY,
+  nextRestIn as restNextIn,
+  restMilestone
+} from '@/core/session'
 import { createProjectFile, parseProjectFile, type ParsedProject } from '@/core/project'
 import { renderThumbnail } from '@/renderer/export'
 import {
@@ -138,7 +143,10 @@ export const useEditorStore = defineStore('editor', () => {
     if (clockTimer) return
     clockTick.value = Date.now()
     // 20 秒刷一次就够：界面上只显示到"分钟"
-    clockTimer = setInterval(() => (clockTick.value = Date.now()), 20000)
+    clockTimer = setInterval(() => {
+      clockTick.value = Date.now()
+      checkRest()
+    }, 20000)
   }
 
   function stopClock(): void {
@@ -154,7 +162,44 @@ export const useEditorStore = defineStore('editor', () => {
   function resetSession(): void {
     sessionStart.value = Date.now()
     clockTick.value = Date.now()
+    restMark = 0
+    restDue.value = false
   }
+
+  // ---------- 久坐提醒：坐久了帮你喊一声 ----------
+  const SIT_KEY = 'bead:sit'
+  const sitReminder = ref(loadFlag(SIT_KEY, true))
+  const restDue = ref(false)
+  let restMark = 0
+
+  function setSitReminder(on: boolean): void {
+    sitReminder.value = on
+    if (!on) restDue.value = false
+    try {
+      localStorage.setItem(SIT_KEY, on ? '1' : '0')
+    } catch {
+      /* 存不了不影响本次会话 */
+    }
+  }
+
+  function checkRest(): void {
+    if (!sitReminder.value) return
+    const mark = restMilestone(sessionMinutes.value, REST_EVERY)
+    if (mark > restMark) {
+      restMark = mark
+      restDue.value = true
+    }
+  }
+
+  function ackRest(): void {
+    restDue.value = false
+  }
+
+  /** 距离下次提醒还有几分钟 */
+  const nextRestIn = computed(() => {
+    if (!sitReminder.value) return 0
+    return restNextIn(sessionMinutes.value, REST_EVERY)
+  })
 
   // ---------- 豆子库存（手上有多少颗，用来算还缺什么） ----------
   const STOCK_KEY = 'bead:stock'
@@ -211,6 +256,29 @@ export const useEditorStore = defineStore('editor', () => {
     return n
   })
   const progress = computed(() => (total.value === 0 ? 0 : doneCount.value / total.value))
+
+  // ---------- 里程碑：拼到 1/4、1/2、3/4、完成时给一句鼓励 ----------
+  const milestone = ref('')
+  const hitMarks = new Set<number>()
+
+  function checkMilestone(): void {
+    const t = total.value
+    if (t === 0) return
+    const p = doneCount.value / t
+    const marks: Array<[number, string]> = [
+      [0.25, '拼到四分之一啦，手速不错 🌱'],
+      [0.5, '一半了，起来伸个懒腰再继续 🍵'],
+      [0.75, '快到尾声了，剩一点点 ✨'],
+      [1, '拼完啦！可以盖纸熨了 🎉']
+    ]
+    for (const [mk, msg] of marks) {
+      if (p >= mk && !hitMarks.has(mk)) {
+        hitMarks.add(mk)
+        milestone.value = msg
+        if (soundOn.value) playChime()
+      }
+    }
+  }
 
   /** 跟拼时高亮"该拼的格子"：指定颜色的未完成格；未指定颜色则高亮全部未完成格 */
   const guideHighlight = computed<Uint8Array | null>(() => {
@@ -533,6 +601,8 @@ export const useEditorStore = defineStore('editor', () => {
   function loadGrid(next: BeadGrid, opts: { keepName?: boolean; newId?: boolean } = {}): void {
     grid.value = next
     resetDone()
+    hitMarks.clear()
+    milestone.value = ''
     undoStack.clear()
     historyVersion.value++
     gridVersion.value++
@@ -653,8 +723,7 @@ export const useEditorStore = defineStore('editor', () => {
     doneVersion.value++
     if (value) {
       tick()
-      const remaining = guideRemaining.value
-      if (remaining === 0 && soundOn.value) playChime()
+      checkMilestone()
     }
     dirty.value = true
     scheduleSave()
@@ -739,6 +808,12 @@ export const useEditorStore = defineStore('editor', () => {
     resetSession,
     startClock,
     stopClock,
+    sitReminder,
+    setSitReminder,
+    restDue,
+    ackRest,
+    nextRestIn,
+    milestone,
     canUndo,
     canRedo,
     currentColor,

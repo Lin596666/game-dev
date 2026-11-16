@@ -1356,4 +1356,30 @@ canvas,
   }
 }
 
+/* ---------- 分享码 ---------- */
+.share-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.share-input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink-2);
+  text-overflow: ellipsis;
+}
+
+.share-input:focus {
+  outline: none;
+  border-color: var(--sakura);
+  box-shadow: 0 0 0 3px rgba(233, 166, 174, 0.22);
+}
+
 

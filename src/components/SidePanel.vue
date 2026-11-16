@@ -257,6 +257,17 @@ function applyFit(): void {
           <span>这次拼了</span>
           <b>{{ store.sessionMinutes }} 分钟</b>
         </div>
+        <label
+          class="usage-item"
+          style="cursor: pointer; margin-top: 6px"
+          @click.prevent="store.setSitReminder(!store.sitReminder)"
+        >
+          <input type="checkbox" :checked="store.sitReminder" />
+          久坐提醒（每 45 分钟）
+        </label>
+        <p v-if="store.sitReminder" class="hint" style="margin: 4px 0 0">
+          还有 {{ store.nextRestIn }} 分钟就提醒你起来动一动。
+        </p>
         <label class="usage-item" style="cursor: pointer; margin-top: 6px" @click.prevent="store.guideMode = !store.guideMode">
           <input type="checkbox" :checked="store.guideMode" />
           开启跟拼模式

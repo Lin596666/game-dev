@@ -9,6 +9,8 @@ import { gridPhysicalInfo, physicalInfo, printLayout } from './physical'
 import { planPrint } from './print'
 import { createProjectFile, parseProjectFile, parseProjectText } from './project'
 import { purchaseText, stockReport } from './stock'
+import { nextRestIn, restMilestone } from './session'
+import { decodeShare, encodeShare, shareCodeFromUrl, shareUrl } from './share'
 
 describe('BeadGrid', () => {
   it('写入与读取', () => {
@@ -279,3 +281,73 @@ describe('豆子库存与采购清单', () => {
     expect(text).not.toContain(COLORS[0]!.code)
   })
 })
+
+describe('分享码', () => {
+  it('编码再解码能还原格子和尺寸', () => {
+    const g = new BeadGrid(9, 7)
+    const a = COLORS[0]!.id
+    const b = COLORS[5]!.id
+    g.set(0, 0, a)
+    g.set(1, 0, a)
+    g.set(2, 0, a)
+    g.set(8, 6, b)
+    const code = encodeShare({ name: '', width: g.width, height: g.height, cells: g.data })
+    const back = decodeShare(code)
+    expect(back.width).toBe(9)
+    expect(back.height).toBe(7)
+    expect(Array.from(back.cells)).toEqual(Array.from(g.data))
+  })
+
+  it('大片同色会被压得很短', () => {
+    const g = new BeadGrid(60, 60)
+    g.fill(COLORS[2]!.id)
+    const code = encodeShare({ name: '', width: g.width, height: g.height, cells: g.data })
+    // 3600 格全同色，行程对只有 (3600, id) 两个变长整数
+    expect(code.length).toBeLessThan(40)
+  })
+
+  it('坏掉的分享码会抛错', () => {
+    expect(() => decodeShare('b1.3.3.!!!')).toThrow()
+    expect(() => decodeShare('hello')).toThrow()
+    expect(() => decodeShare('b1.0.3.abc')).toThrow()
+  })
+
+  it('链接里能取回分享码', () => {
+    const code = encodeShare({
+      name: '',
+      width: 2,
+      height: 2,
+      cells: new Uint16Array([1, 1, 0, 0])
+    })
+    const url = shareUrl(code, 'https://example.com/game-dev/')
+    expect(url.startsWith('https://example.com/game-dev/#p=')).toBe(true)
+    expect(shareCodeFromUrl(new URL(url).hash)).toBe(code)
+    expect(shareCodeFromUrl('#nothing=1')).toBe('')
+  })
+})
+
+describe('久坐提醒', () => {
+  it('还没到第一轮时不提醒', () => {
+    expect(restMilestone(0)).toBe(0)
+    expect(restMilestone(44)).toBe(0)
+  })
+
+  it('到点后返回跨过的整点，整轮内保持不变', () => {
+    expect(restMilestone(45)).toBe(45)
+    expect(restMilestone(70)).toBe(45)
+    expect(restMilestone(90)).toBe(90)
+  })
+
+  it('距离下次提醒的分钟数', () => {
+    expect(nextRestIn(0)).toBe(45)
+    expect(nextRestIn(20)).toBe(25)
+    expect(nextRestIn(45)).toBe(45)
+    expect(nextRestIn(46)).toBe(44)
+  })
+
+  it('可以自定义间隔', () => {
+    expect(restMilestone(59, 30)).toBe(30)
+    expect(nextRestIn(59, 30)).toBe(1)
+  })
+})
+

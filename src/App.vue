@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { defineAsyncComponent, onBeforeUnmount, onMounted, ref } from 'vue'
+import { defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { BeadGrid } from '@/core/grid'
 import { LIBRARY } from '@/core/library'
+import { decodeShare, shareCodeFromUrl } from '@/core/share'
 import { useEditorStore, type ToolId } from '@/store/editor'
 import TopBar from './components/TopBar.vue'
 import ToolRail from './components/ToolRail.vue'
@@ -14,6 +15,7 @@ import ImportImageModal from './components/ImportImageModal.vue'
 import ExportModal from './components/ExportModal.vue'
 import PrintModal from './components/PrintModal.vue'
 import StockModal from './components/StockModal.vue'
+import ShareModal from './components/ShareModal.vue'
 
 // 3D 预览整块按需加载，three.js 只在真正打开时才下载
 const Scene3DModal = defineAsyncComponent(() => import('./components/Scene3DModal.vue'))
@@ -30,6 +32,7 @@ const showImport = ref(false)
 const showExport = ref(false)
 const showPrint = ref(false)
 const showStock = ref(false)
+const showShare = ref(false)
 const showScene3D = ref(false)
 const panelOpen = ref(false)
 
@@ -50,6 +53,7 @@ function closeAll(): void {
   showExport.value = false
   showPrint.value = false
   showStock.value = false
+  showShare.value = false
   showScene3D.value = false
 }
 
@@ -151,10 +155,50 @@ function onKey(e: KeyboardEvent): void {
   if (t && !meta) store.tool = t
 }
 
+// 久坐提醒：到点弹一句，提醒过就清掉标记，下一轮再说
+watch(
+  () => store.restDue,
+  (due) => {
+    if (!due) return
+    toast('坐了有点久，起来走两步、看看远处 🌿')
+    store.ackRest()
+  }
+)
+
+// 里程碑：拼到 1/4、1/2、3/4、完成时给一句鼓励
+watch(
+  () => store.milestone,
+  (msg) => {
+    if (!msg) return
+    toast(msg)
+    store.milestone = ''
+  }
+)
+
 onMounted(async () => {
   window.addEventListener('keydown', onKey)
   store.startClock()
   void store.ensurePersist()
+
+  // 链接里带分享码（#p=b1.…）就直接打开那张图纸，不再读本机最近作品
+  const shared = shareCodeFromUrl(location.hash)
+  if (shared) {
+    try {
+      const payload = decodeShare(shared)
+      store.docName = '来自分享的图纸'
+      store.loadGrid(new BeadGrid(payload.width, payload.height, payload.cells), {
+        newId: true,
+        keepName: true
+      })
+      // 清掉 hash：刷新页面时不要再导入一次
+      history.replaceState(null, '', location.pathname + location.search)
+      toast(`已打开朋友分享的 ${payload.width}×${payload.height} 图纸`)
+      return
+    } catch {
+      toast('分享链接里的图纸解析失败了')
+    }
+  }
+
   const list = await store.listAll()
   if (list.length > 0) {
     await store.openProject(list[0]!.id)
@@ -200,7 +244,15 @@ onBeforeUnmount(() => {
     <LibraryModal v-if="showLibrary" @close="showLibrary = false" @pick="pickLibrary" />
     <ProjectsModal v-if="showProjects" @close="showProjects = false" @open="openProject" />
     <ImportImageModal v-if="showImport" @close="showImport = false" @apply="applyImport" />
-    <ExportModal v-if="showExport" @close="showExport = false" />
+    <ExportModal
+      v-if="showExport"
+      @close="showExport = false"
+      @share="
+        showExport = false;
+        showShare = true
+      "
+    />
+    <ShareModal v-if="showShare" @close="showShare = false" />
     <PrintModal v-if="showPrint" @close="showPrint = false" />
     <StockModal v-if="showStock" @close="showStock = false" />
     <Scene3DModal v-if="showScene3D" @close="showScene3D = false" />
