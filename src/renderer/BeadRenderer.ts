@@ -28,6 +28,8 @@ export interface RenderOptions {
   paperColor: string
   /** 成品效果：未烫 / 布烫 / 烤纸烫 / 闪粉系列 */
   finish: IronFinishId
+  /** 按 29×29 豆板画分块线 */
+  boardLines: boolean
 }
 
 export interface PreviewPatch {
@@ -73,7 +75,8 @@ export class BeadRenderer {
     showNumbers: false,
     showRulers: true,
     paperColor: '#FBF7F1',
-    finish: 'raw'
+    finish: 'raw',
+    boardLines: false
   }
   private preview: PreviewPatch | null = null
   private selection: SelectionRect | null = null
@@ -288,6 +291,7 @@ export class BeadRenderer {
     if (this.options.showGrid && z >= GRIDLINE_MIN_ZOOM) {
       this.drawGridLines(ox, oy, z, x0, y0, x1, y1)
     }
+    if (this.options.boardLines) this.drawBoardLines(g, ox, oy, z)
     if (this.options.showNumbers && z >= NUMBER_MIN_ZOOM) {
       this.drawNumbers(g, ox, oy, z, x0, y0, x1, y1)
     }
@@ -507,6 +511,30 @@ export class BeadRenderer {
       }
       ctx.restore()
     }
+  }
+
+  /** 豆板分块线：每隔 29 格加一条更深的线，方便按板分次拼 */
+  private drawBoardLines(g: BeadGrid, ox: number, oy: number, z: number): void {
+    const ctx = this.ctx
+    const every = 29
+    if (g.width <= every && g.height <= every) return
+    const path = new Path2D()
+    for (let x = every; x < g.width; x += every) {
+      const px = Math.round(ox + x * z) + 0.5
+      path.moveTo(px, oy)
+      path.lineTo(px, oy + g.height * z)
+    }
+    for (let y = every; y < g.height; y += every) {
+      const py = Math.round(oy + y * z) + 0.5
+      path.moveTo(ox, py)
+      path.lineTo(ox + g.width * z, py)
+    }
+    ctx.save()
+    ctx.strokeStyle = 'rgba(201, 123, 90, 0.55)'
+    ctx.lineWidth = Math.max(1.2, z * 0.09)
+    ctx.setLineDash([z * 0.9, z * 0.6])
+    ctx.stroke(path)
+    ctx.restore()
   }
 
   private drawGridLines(

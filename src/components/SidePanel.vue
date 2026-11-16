@@ -195,6 +195,10 @@ function applyFitOwned(): void {
           <input type="checkbox" :checked="store.showNumbers" />
           显示色号（放大后可见）
         </label>
+        <label class="usage-item" style="cursor: pointer" @click.prevent="store.showBoards = !store.showBoards">
+          <input type="checkbox" :checked="store.showBoards" />
+          按 29×29 豆板分块
+        </label>
         <label class="usage-item" style="cursor: pointer" @click.prevent="store.setSoundOn(!store.soundOn)">
           <input type="checkbox" :checked="store.soundOn" />
           珠子落盘的声音

@@ -79,6 +79,8 @@ export const useEditorStore = defineStore('editor', () => {
   const style = ref<CanvasStyle>('bead')
   const showGrid = ref(true)
   const showNumbers = ref(false)
+  /** 是否画 29×29 豆板分块虚线 */
+  const showBoards = ref(false)
   /** 烫法：决定画布上画的是圆珠还是熨过的成品 */
   const FINISH_KEY = 'bead:finish'
   const finish = ref<IronFinishId>(loadFinish())
@@ -875,6 +877,7 @@ export const useEditorStore = defineStore('editor', () => {
     style,
     showGrid,
     showNumbers,
+    showBoards,
     finish,
     finishInfo,
     setFinish,
