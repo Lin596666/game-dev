@@ -1,0 +1,63 @@
+/* 日式温馨风格的设计令牌，和 Web 版保持一致 */
+page {
+  --paper: #fbf7f1;
+  --paper-2: #f6f0e7;
+  --paper-3: #efe7da;
+  --ink: #3a342e;
+  --ink-2: #6d6459;
+  --ink-3: #9a9086;
+  --line: #e4dbcd;
+  --sakura: #e9a6ae;
+  --matcha: #8fa98a;
+  --clay: #c97b5a;
+
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 28rpx;
+  line-height: 1.6;
+  font-family: -apple-system, "PingFang SC", "Hiragino Sans GB", sans-serif;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12rpx 24rpx;
+  border-radius: 20rpx;
+  border: 1rpx solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  font-size: 26rpx;
+}
+
+.btn.primary {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+
+.btn.sm {
+  padding: 8rpx 16rpx;
+  font-size: 24rpx;
+}
+
+.btn.on {
+  border-color: var(--sakura);
+  background: #fdf0f2;
+}
+
+.card {
+  background: #fff;
+  border-radius: 24rpx;
+  border: 1rpx solid var(--line);
+  padding: 24rpx;
+}
+
+.hint {
+  color: var(--ink-3);
+  font-size: 22rpx;
+}
+
+.serif {
+  font-family: "Songti SC", "Yu Mincho", serif;
+}

@@ -1,0 +1,13 @@
+{
+  "pages": ["pages/index/index", "pages/editor/editor"],
+  "window": {
+    "navigationBarTitleText": "拼豆工房",
+    "navigationBarBackgroundColor": "#FBF7F1",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#FBF7F1",
+    "backgroundTextStyle": "light"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

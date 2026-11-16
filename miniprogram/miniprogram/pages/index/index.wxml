@@ -1,0 +1,60 @@
+<view class="page">
+  <view class="hero">
+    <text class="serif title">拼豆工房</text>
+    <text class="sub">随手拼一颗 · 数据只存在你自己手机里</text>
+  </view>
+
+  <view class="section">
+    <view class="sec-head">
+      <text class="sec-title">我的作品</text>
+      <text class="hint">{{works.length}} 张</text>
+    </view>
+    <view wx:if="{{works.length}}" class="works">
+      <view class="work" wx:for="{{works}}" wx:key="id" bindtap="openWork" data-id="{{item.id}}">
+        <view class="badge">{{item.size}}</view>
+        <text class="w-name">{{item.name}}</text>
+        <text class="hint">{{item.time}}</text>
+        <text class="del" catchtap="deleteWork" data-id="{{item.id}}">删除</text>
+      </view>
+    </view>
+    <view wx:else class="empty">还没有作品，从下面挑一张图纸开始吧</view>
+  </view>
+
+  <view class="section">
+    <view class="sec-head">
+      <text class="sec-title">内置图纸</text>
+      <text class="hint">程序生成 · 不占空间</text>
+    </view>
+    <view class="libs">
+      <view class="lib" wx:for="{{library}}" wx:key="id" bindtap="openLib" data-id="{{item.id}}">
+        <text class="lib-name">{{item.name}}</text>
+        <text class="lib-size">{{item.size}}</text>
+        <text class="lib-desc">{{item.desc}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="sec-head">
+      <text class="sec-title">新建空白</text>
+      <text class="hint">挑个尺寸</text>
+    </view>
+    <view class="sizes">
+      <view class="size" wx:for="{{sizes}}" wx:key="*this" bindtap="newBlank" data-size="{{item}}">{{item}}×{{item}}</view>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="sec-head">
+      <text class="sec-title">图片转图纸</text>
+      <text class="hint">选照片 → 自动配珠色</text>
+    </view>
+    <view class="card" bindtap="onImportTap">
+      <text class="hint">从相册挑一张照片，选好尺寸后会逐像素算成拼豆色号。照片只在这台手机上处理，不会上传。</text>
+    </view>
+  </view>
+
+  <view class="foot">
+    <text class="hint">无账号 · 无社交 · 不上传任何数据</text>
+  </view>
+</view>

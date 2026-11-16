@@ -1,0 +1,161 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  box-sizing: border-box;
+  padding: 16rpx 20rpx calc(16rpx + env(safe-area-inset-bottom));
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding-bottom: 12rpx;
+}
+
+.name {
+  flex: 1;
+  min-width: 0;
+  font-size: 28rpx;
+  color: var(--ink);
+  background: #fff;
+  border: 1rpx solid var(--line);
+  border-radius: 16rpx;
+  padding: 10rpx 16rpx;
+  height: 60rpx;
+  box-sizing: border-box;
+}
+
+.size {
+  font-size: 22rpx;
+  color: var(--ink-3);
+}
+
+.act {
+  font-size: 24rpx;
+  color: var(--ink);
+  background: var(--paper-2);
+  border: 1rpx solid var(--line);
+  border-radius: 14rpx;
+  padding: 8rpx 16rpx;
+}
+
+.stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  border-radius: 24rpx;
+  overflow: hidden;
+  background: var(--paper-2);
+  border: 1rpx solid var(--line);
+}
+
+.cv {
+  width: 100%;
+  height: 100%;
+}
+
+.float {
+  position: absolute;
+  right: 16rpx;
+  bottom: 16rpx;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  background: rgba(255, 253, 250, 0.92);
+  border: 1rpx solid var(--line);
+  border-radius: 999rpx;
+  padding: 6rpx 14rpx;
+}
+
+.fbtn {
+  font-size: 24rpx;
+  color: var(--ink);
+  padding: 0 8rpx;
+}
+
+.zoom {
+  font-size: 20rpx;
+  color: var(--ink-3);
+  min-width: 56rpx;
+  text-align: right;
+}
+
+.guide-tip {
+  position: absolute;
+  left: 16rpx;
+  top: 16rpx;
+  font-size: 22rpx;
+  color: var(--ink-2);
+  background: rgba(255, 253, 250, 0.92);
+  border: 1rpx solid var(--line);
+  border-radius: 999rpx;
+  padding: 6rpx 16rpx;
+}
+
+.tools {
+  display: flex;
+  gap: 10rpx;
+  padding: 14rpx 0 10rpx;
+  overflow-x: auto;
+}
+
+.tool {
+  flex: none;
+  font-size: 24rpx;
+  color: var(--ink-2);
+  background: #fff;
+  border: 1rpx solid var(--line);
+  border-radius: 14rpx;
+  padding: 10rpx 20rpx;
+}
+
+.tool.on {
+  color: var(--ink);
+  border-color: var(--sakura);
+  background: #FDF1F2;
+}
+
+.setbar {
+  display: flex;
+  gap: 10rpx;
+  padding: 4rpx 0 10rpx;
+}
+
+.pill {
+  font-size: 22rpx;
+  color: var(--ink-2);
+  border: 1rpx solid var(--line);
+  background: #fff;
+  border-radius: 999rpx;
+  padding: 8rpx 18rpx;
+}
+
+.pill.on {
+  color: #fff;
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+.swatches {
+  width: 100%;
+  white-space: nowrap;
+}
+
+.swatch-wrap {
+  display: inline-flex;
+  gap: 12rpx;
+  padding: 8rpx 4rpx;
+}
+
+.swatch {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  border: 3rpx solid transparent;
+  box-sizing: border-box;
+}
+
+.swatch.on {
+  border-color: var(--ink);
+}

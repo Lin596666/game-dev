@@ -1,0 +1,74 @@
+<view class="page">
+  <view class="topbar">
+    <input class="name" value="{{name}}" placeholder="给作品起个名字" bindinput="onNameInput" confirm-type="done" />
+    <text class="size">{{sizeText}}</text>
+    <view class="act" bindtap="saveNow">保存</view>
+    <view class="act" bindtap="exportImage">导出</view>
+  </view>
+
+  <view class="stage">
+    <canvas
+      id="cv"
+      type="2d"
+      class="cv"
+      disable-scroll="{{true}}"
+      bindtouchstart="onTouchStart"
+      bindtouchmove="onTouchMove"
+      bindtouchend="onTouchEnd"
+      bindtouchcancel="onTouchEnd"
+    ></canvas>
+
+    <view class="float">
+      <view class="fbtn" bindtap="zoomOut">－</view>
+      <view class="fbtn" bindtap="zoomIn">＋</view>
+      <view class="fbtn" bindtap="fitView">适配</view>
+      <text class="zoom">{{zoomText}}</text>
+    </view>
+
+    <view wx:if="{{guideMode}}" class="guide-tip">跟拼模式：点一颗珠子就标记为已拼（{{progress}}%）</view>
+  </view>
+
+  <view class="tools">
+    <view
+      wx:for="{{tools}}"
+      wx:key="id"
+      class="tool {{tool === item.id ? 'on' : ''}}"
+      bindtap="onTool"
+      data-id="{{item.id}}"
+    >{{item.label}}</view>
+    <view class="tool {{showNumbers ? 'on' : ''}}" bindtap="toggleNumbers">色号</view>
+    <view class="tool {{guideMode ? 'on' : ''}}" bindtap="toggleGuide">跟拼</view>
+    <view class="tool" bindtap="undoAction">撤销</view>
+    <view class="tool" bindtap="redoAction">重做</view>
+  </view>
+
+  <view wx:if="{{guideMode}}" class="setbar">
+    <picker mode="selector" range="{{guideOptions}}" range-key="label" bindchange="onGuideColorPick">
+      <view class="pill on">只看：{{guideLabel}}</view>
+    </picker>
+    <view class="pill">已拼 {{progress}}%</view>
+  </view>
+
+  <view class="setbar">
+    <view
+      wx:for="{{sets}}"
+      wx:key="id"
+      class="pill {{setIndex === index ? 'on' : ''}}"
+      bindtap="onSetIndex"
+      data-index="{{index}}"
+    >{{item.label}}</view>
+  </view>
+
+  <scroll-view class="swatches" scroll-x="{{true}}" enhanced="{{true}}" show-scrollbar="{{false}}">
+    <view class="swatch-wrap">
+      <view
+        wx:for="{{swatches}}"
+        wx:key="id"
+        class="swatch {{colorId === item.id ? 'on' : ''}}"
+        style="background: {{item.hex}}"
+        bindtap="onPickColor"
+        data-id="{{item.id}}"
+      ></view>
+    </view>
+  </scroll-view>
+</view>

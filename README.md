@@ -83,7 +83,30 @@ src/
 src-tauri/           # 桌面端外壳（Tauri v2），界面代码一行都不在这里
 docs/                # 桌面端打包等说明
 scripts/build.mjs    # 构建包装：把 TEMP 指到项目内，绕开 Windows esbuild 报错
+scripts/build-mp.mjs # 把 src/core 打成小程序能用的 CommonJS（core/index.js）
+miniprogram/         # 微信小程序端（原生小程序，不引 uni-app/Taro）
 ```
+
+## 微信小程序端
+
+`miniprogram/` 是一套**原生小程序**工程，直接复用 `src/core/` 里的全部纯逻辑（网格、色卡、量化、工程文件、图纸库），只另写了一个更轻的 Canvas 2D 渲染器。
+
+```bash
+npm run mp:build   # 把 src/core 用 esbuild 打成 miniprogram/miniprogram/core/index.js
+```
+
+然后用「微信开发者工具」打开仓库里的 `miniprogram/` 目录即可预览（`project.config.json` 里用的是 `touristappid`，正式发布时换成你自己的 AppID）。
+
+小程序端有的功能：
+
+- 我的作品（本地缓存，不上传）、8 张内置图纸、新建 29/48/58/72/96 空白图纸
+- 画笔 / 橡皮 / 油漆桶 / 吸管，四套色卡横向滑动选色
+- 双指捏合缩放、单指绘制、适配视图、色号显示
+- 跟拼模式：点一颗珠子就标记已拼，可按颜色只看未拼部分，显示完成百分比
+- **相册照片 → 拼豆图纸**：离屏画布逐像素采样，再用与网页版同一套 `quantizeImage` 配珠色
+- 导出当前画面到手机相册
+
+小程序没有 IndexedDB，作品存在 `wx.storage`（单 key 1MB、总量 10MB）。一张 96×96 的图纸 base64 后约 36KB，够存两百多张；再多就要换文件系统存储了。
 
 ## 本地开发
 
@@ -123,6 +146,8 @@ iOS Safari 有一个「7 天不访问就清空网站数据」的策略，Indexed
 - [x] 分步引导（一颗一颗带新手拼）
 - [x] 3D 预览作品摆件效果（three.js 懒加载，不拖慢首屏）
 - [x] 桌面端脚手架（Tauri v2，配置已就绪，需本机装 Rust 后才能编译，见 [docs/desktop.md](docs/desktop.md)）
+- [x] 微信小程序端（原生小程序，复用 core 逻辑，含图片转图纸）
+- [ ] 小程序端在真机/开发者工具里过一遍（本机没有微信开发者工具，目前只做了静态校验与打包自检）
 - [ ] 桌面端实际打包出安装包（本机尚无 Rust 工具链）
 - [ ] 手机商店上架（Capacitor 7，需要 APP 备案号 + 软著）
 
