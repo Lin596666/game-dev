@@ -2,7 +2,13 @@
 import { computed, ref, watch } from 'vue'
 import { instructionText } from '@/core/pattern'
 import { useEditorStore } from '@/store/editor'
-import { canvasToBlob, downloadBlob, downloadText, renderPng } from '@/renderer/export'
+import {
+  canvasToBlob,
+  downloadBlob,
+  downloadText,
+  renderPng,
+  renderShareCard
+} from '@/renderer/export'
 import Modal from './Modal.vue'
 
 const store = useEditorStore()
@@ -41,6 +47,26 @@ function buildPreview(): void {
 }
 
 watch([showGrid, withLegend, transparent, crop], buildPreview, { immediate: true })
+
+async function exportCard(): Promise<void> {
+  busy.value = true
+  try {
+    const { canvas } = renderShareCard(store.grid, {
+      name: store.docName || '拼豆作品',
+      beads: store.total,
+      width: store.grid.width,
+      height: store.grid.height,
+      finishName: store.finish === 'raw' ? '' : store.finishInfo.name
+    })
+    const blob = await canvasToBlob(canvas)
+    downloadBlob(blob, `${safeName.value}-分享卡.png`)
+    message.value = '分享卡片已下载（1080×1350）'
+  } catch (err) {
+    message.value = err instanceof Error ? err.message : '生成分享卡失败'
+  } finally {
+    busy.value = false
+  }
+}
 
 async function exportPng(): Promise<void> {
   busy.value = true
@@ -133,6 +159,7 @@ async function saveNow(): Promise<void> {
 
     <template #footer>
       <button class="btn" @click="emit('close')">关闭</button>
+      <button class="btn" @click="exportCard">分享卡片</button>
       <button class="btn" @click="exportList">色号清单</button>
       <button class="btn" @click="exportProject">工程文件</button>
       <button class="btn" @click="saveNow">保存到本机</button>

@@ -273,3 +273,112 @@ export function renderThumbnail(grid: BeadGrid, size = 220): string {
   }
   return canvas.toDataURL('image/png')
 }
+
+export interface ShareCardOptions {
+  name: string
+  beads: number
+  width: number
+  height: number
+  finishName?: string
+  paperColor?: string
+}
+
+export interface ShareCardResult {
+  canvas: HTMLCanvasElement
+  width: number
+  height: number
+}
+
+/**
+ * 分享卡片：1080×1350（4:5，朋友圈/小红书都合适）。
+ * 纸底 + 白卡 + 居中作品 + 名字与颗数，右下角一行小字署名。
+ */
+export function renderShareCard(grid: BeadGrid, options: ShareCardOptions): ShareCardResult {
+  const W = 1080
+  const H = 1350
+  const paper = options.paperColor ?? '#FBF7F1'
+
+  const canvas = document.createElement('canvas')
+  canvas.width = W
+  canvas.height = H
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('导出失败：无法创建画布')
+
+  ctx.fillStyle = paper
+  ctx.fillRect(0, 0, W, H)
+
+  // 四角柔和的暖色晕，让纸看起来有厚度
+  const glow = ctx.createRadialGradient(W / 2, 260, 80, W / 2, 260, 900)
+  glow.addColorStop(0, 'rgba(255, 253, 248, 0.95)')
+  glow.addColorStop(1, 'rgba(251, 247, 241, 0)')
+  ctx.fillStyle = glow
+  ctx.fillRect(0, 0, W, H)
+
+  // 白卡
+  const cardX = 64
+  const cardY = 64
+  const cardW = W - cardX * 2
+  const cardH = H - cardY * 2
+  ctx.save()
+  ctx.shadowColor = 'rgba(122, 103, 84, 0.16)'
+  ctx.shadowBlur = 48
+  ctx.shadowOffsetY = 18
+  ctx.fillStyle = '#FFFDFA'
+  roundRect(ctx, cardX, cardY, cardW, cardH, 40)
+  ctx.fill()
+  ctx.restore()
+
+  // 作品：按内容裁切后居中，最大 760px
+  const c = cropBounds(grid)
+  const px = Math.max(2, Math.floor(760 / Math.max(c.w, c.h)))
+  const artW = c.w * px
+  const artH = c.h * px
+  const artX = Math.round((W - artW) / 2)
+  const artY = Math.round(cardY + 150 + (760 - artH) / 2)
+
+  for (let y = 0; y < c.h; y++) {
+    for (let x = 0; x < c.w; x++) {
+      const id = grid.get(c.x + x, c.y + y)
+      if (id === EMPTY) continue
+      const color = colorById(id)
+      if (!color) continue
+      ctx.fillStyle = color.hex
+      ctx.fillRect(artX + x * px, artY + y * px, px, px)
+    }
+  }
+
+  // 标题与统计
+  ctx.textAlign = 'center'
+  ctx.fillStyle = '#3A342E'
+  ctx.font = '600 52px "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif SC", serif'
+  ctx.fillText(options.name || '拼豆作品', W / 2, cardY + 92)
+
+  const bits = [`${options.width}×${options.height}`, `${options.beads} 颗`]
+  if (options.finishName) bits.push(options.finishName)
+  ctx.fillStyle = '#8C8378'
+  ctx.font = '400 30px "PingFang SC", "Microsoft YaHei", sans-serif'
+  ctx.fillText(bits.join(' · '), W / 2, cardY + 136)
+
+  ctx.fillStyle = '#B3AA9E'
+  ctx.font = '400 24px "PingFang SC", "Microsoft YaHei", sans-serif'
+  ctx.fillText('拼豆工房 · Bead Atelier', W / 2, cardY + cardH - 56)
+
+  return { canvas, width: W, height: H }
+}
+
+function roundRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number
+): void {
+  ctx.beginPath()
+  ctx.moveTo(x + r, y)
+  ctx.arcTo(x + w, y, x + w, y + h, r)
+  ctx.arcTo(x + w, y + h, x, y + h, r)
+  ctx.arcTo(x, y + h, x, y, r)
+  ctx.arcTo(x, y, x + w, y, r)
+  ctx.closePath()
+}
