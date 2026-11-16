@@ -19,6 +19,8 @@ Page({
     swatches: [],
     colorId: 0,
     showNumbers: false,
+    finishId: 'raw',
+    finishName: '未烫成品',
     guideMode: false,
     guideColorId: 0,
     guideLabel: '全部未完成',
@@ -52,7 +54,12 @@ Page({
           this.docId = parsed.id
           this.createdAt = parsed.createdAt || Date.now()
           this.done = parsed.done || new Uint8Array(parsed.grid.width * parsed.grid.height)
-          this.setData({ name: parsed.name || '未命名' })
+          const f = parsed.finish ? core.finishById(parsed.finish) : null
+          this.setData({
+            name: parsed.name || '未命名',
+            finishId: f ? f.id : 'raw',
+            finishName: f ? f.name : '未烫成品'
+          })
         } catch (e) {
           wx.showToast({ title: '这个作品读不出来', icon: 'none' })
         }
@@ -116,6 +123,7 @@ Page({
         this.canvasNode = info.node
         this.renderer = new Renderer(info.node, ctx, info.width, info.height, dpr)
         this.renderer.setGrid(this.grid)
+        this.renderer.setOptions({ finish: core.finishById(this.data.finishId), sparkleAt: core.sparkleAt })
         this.fitZoom = this.renderer.zoom
         this.renderer.setGuide(this.guideState())
         this.renderer.render()
@@ -290,6 +298,22 @@ Page({
     wx.setStorageSync('bead:lastSet', group.set.id)
   },
 
+  chooseFinish() {
+    const list = core.IRON_FINISHES
+    wx.showActionSheet({
+      itemList: list.map((f) => f.name),
+      success: (res) => {
+        const f = list[res.tapIndex]
+        if (!f) return
+        this.setData({ finishId: f.id, finishName: f.name })
+        if (this.renderer) {
+          this.renderer.setOptions({ finish: f, sparkleAt: core.sparkleAt })
+        }
+        this.persist()
+      }
+    })
+  },
+
   toggleNumbers() {
     this.setData({ showNumbers: !this.data.showNumbers })
     if (this.renderer) this.renderer.setOptions({ showNumbers: this.data.showNumbers })
@@ -456,6 +480,7 @@ Page({
       id: this.docId,
       name: this.data.name || '未命名',
       done: this.done,
+      finish: this.data.finishId,
       createdAt: this.createdAt
     })
     db.save(rec)

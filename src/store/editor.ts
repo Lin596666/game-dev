@@ -438,6 +438,7 @@ export const useEditorStore = defineStore('editor', () => {
       name: docName.value,
       pricePerBead: pricePerBead.value,
       done,
+      finish: finish.value,
       createdAt: createdAt.value
     })
     try {
@@ -716,6 +717,9 @@ export const useEditorStore = defineStore('editor', () => {
     docName.value = parsed.name
     createdAt.value = parsed.createdAt
     pricePerBead.value = parsed.pricePerBead
+    if (parsed.finish && IRON_FINISHES.some((f) => f.id === parsed.finish)) {
+      finish.value = parsed.finish as IronFinishId
+    }
     grid.value = parsed.grid
     done = parsed.done.length === parsed.grid.data.length ? parsed.done : new Uint8Array(parsed.grid.data.length)
     doneVersion.value++
@@ -758,6 +762,7 @@ export const useEditorStore = defineStore('editor', () => {
       name: docName.value,
       pricePerBead: pricePerBead.value,
       done,
+      finish: finish.value,
       createdAt: createdAt.value
     })
     return JSON.stringify(file)

@@ -33,6 +33,8 @@ class Renderer {
     this.oy = 0
     this.showNumbers = false
     this.guide = { mode: false, done: null, colorId: 0, focus: null }
+    this.finish = core.finishById('raw')
+    this.sparkleAt = core.sparkleAt
     this.resize(cssW, cssH, this.dpr)
   }
 
@@ -43,6 +45,9 @@ class Renderer {
 
   setOptions(opts) {
     if (typeof opts.showNumbers === 'boolean') this.showNumbers = opts.showNumbers
+    if (opts.finish) this.finish = opts.finish
+    if (typeof opts.sparkleAt === 'function') this.sparkleAt = opts.sparkleAt
+    this.render()
   }
 
   setGuide(guide) {
@@ -115,14 +120,32 @@ class Renderer {
     ctx.fillStyle = '#FFFDFA'
     ctx.fillRect(this.ox, this.oy, g.width * z, g.height * z)
 
-    // 2. 珠子
+    // 2. 珠子（熨过的压成方糖状，多一圈高光；带闪粉的再撒亮点）
     const half = z + 0.6
+    const f = this.finish
+    const ironed = !!(f && f.ironed)
+    const sparkleOn = !!(f && f.sparkle > 0) && z >= 6 && this.sparkleAt
     for (let y = y0; y <= y1; y++) {
       for (let x = x0; x <= x1; x++) {
         const v = g.data[y * g.width + x]
         if (!v) continue
         ctx.fillStyle = HEX.get(v) || '#DDD'
         ctx.fillRect(this.ox + x * z, this.oy + y * z, half, half)
+        if (ironed && z >= 8) {
+          const bx = this.ox + x * z
+          const by = this.oy + y * z
+          ctx.fillStyle = 'rgba(255,255,255,0.45)'
+          ctx.fillRect(bx, by, half, 1)
+          ctx.fillRect(bx, by, 1, half)
+        }
+        if (sparkleOn) {
+          const sp = this.sparkleAt(x, y, f)
+          if (sp.on) {
+            const r = Math.max(1, sp.size * z * 0.5)
+            ctx.fillStyle = sp.rainbow ? '#FFFFFF' : 'rgba(255,255,255,0.85)'
+            ctx.fillRect(this.ox + x * z + sp.px * z, this.oy + y * z + sp.py * z, r, r)
+          }
+        }
       }
     }
 

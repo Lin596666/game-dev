@@ -15,6 +15,8 @@ export interface ProjectFile {
   /** 跟拼进度（0/1 每格一字节），可选 */
   done?: string
   pricePerBead?: number
+  /** 这个作品选的烫法，换设备打开也能记住 */
+  finish?: string
   createdAt: number
   updatedAt: number
 }
@@ -62,7 +64,14 @@ export function base64ToDone(b64: string | undefined, length: number): Uint8Arra
 
 export function createProjectFile(
   grid: BeadGrid,
-  meta: { id: string; name: string; pricePerBead?: number; done?: Uint8Array; createdAt?: number }
+  meta: {
+    id: string
+    name: string
+    pricePerBead?: number
+    done?: Uint8Array
+    finish?: string
+    createdAt?: number
+  }
 ): ProjectFile {
   const now = Date.now()
   return {
@@ -74,6 +83,7 @@ export function createProjectFile(
     cells: cellsToBase64(grid.data),
     done: meta.done ? doneToBase64(meta.done) : undefined,
     pricePerBead: meta.pricePerBead,
+    finish: meta.finish,
     createdAt: meta.createdAt ?? now,
     updatedAt: now
   }
@@ -85,6 +95,7 @@ export interface ParsedProject {
   name: string
   id: string
   pricePerBead: number
+  finish: string | null
   createdAt: number
   updatedAt: number
 }
@@ -108,6 +119,7 @@ export function parseProjectFile(raw: unknown): ParsedProject {
     name: doc.name || '未命名图纸',
     id: doc.id || crypto.randomUUID(),
     pricePerBead: doc.pricePerBead ?? 0.03,
+    finish: typeof doc.finish === 'string' ? doc.finish : null,
     createdAt: doc.createdAt ?? Date.now(),
     updatedAt: doc.updatedAt ?? Date.now()
   }

@@ -367,6 +367,17 @@ describe('久坐提醒', () => {
 })
 
 
+describe('烫法写进工程文件', () => {
+  it('保存再读回来，烫法还在；老文件没有这个字段也能读', () => {
+    const g = new BeadGrid(6, 6)
+    g.set(1, 1, COLORS[0].id)
+    const file = createProjectFile(g, { id: 'p1', name: '试试', finish: 'rainbowFine' })
+    expect(parseProjectFile(JSON.parse(JSON.stringify(file))).finish).toBe('rainbowFine')
+    const legacy = createProjectFile(g, { id: 'p2', name: '老文件' })
+    expect(parseProjectFile(JSON.parse(JSON.stringify(legacy))).finish).toBeNull()
+  })
+})
+
 describe('烫法（成品效果）', () => {
   it('七种烫法都能按 id 取到，未烫不压扁', () => {
     expect(IRON_FINISHES).toHaveLength(7)

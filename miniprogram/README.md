@@ -38,7 +38,21 @@ miniprogram/
 | 图片转图纸 | 可调尺寸/色数/色卡/抖动 | 选定尺寸后自动配 14 色以内 |
 | 3D 预览 | 有（three.js 懒加载） | 无 |
 
+## 用命令行打开 / 预览
+
+本机装了微信开发者工具时，可以不起 GUI 手动点：
+
+```bash
+# 工程目录：miniprogram/（里面有 project.config.json）
+D:/微信开发者工具/微信web开发者工具/cli.bat open --project D:/workSpace-游戏开发/miniprogram
+
+# 编译并出预览二维码（同时就是一次完整的编译校验）
+D:/微信开发者工具/微信web开发者工具/cli.bat preview --project D:/workSpace-游戏开发/miniprogram --qr-output D:/workSpace-游戏开发/.tmp/mp-qr.png --qr-format image
+```
+
+CLI 会沿用开发者工具里已登录的 AppID；`--qr-output` 必须是**已存在的目录下的绝对路径**，写成相对路径会报 `二维码输出路径无效`。
+
 ## 已知待办
 
-- 还没在真机上跑过（本机没有微信开发者工具），目前只做了 `node --check` 语法校验和打包自检
+- 已在微信开发者工具里编译通过（`cli preview` 成功，包体 57.3 KB），但还没在真机上用真豆子走一遍
 - 小程序端还没有：形状工具（直线/矩形/椭圆）、撤销步数上限调整、色号清单导出

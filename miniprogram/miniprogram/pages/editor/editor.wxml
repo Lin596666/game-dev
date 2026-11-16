@@ -38,6 +38,7 @@
     >{{item.label}}</view>
     <view class="tool {{showNumbers ? 'on' : ''}}" bindtap="toggleNumbers">色号</view>
     <view class="tool {{guideMode ? 'on' : ''}}" bindtap="toggleGuide">跟拼</view>
+    <view class="tool {{finishId !== 'raw' ? 'on' : ''}}" bindtap="chooseFinish">{{finishId === 'raw' ? '烫法' : finishName}}</view>
     <view class="tool" bindtap="undoAction">撤销</view>
     <view class="tool" bindtap="redoAction">重做</view>
   </view>

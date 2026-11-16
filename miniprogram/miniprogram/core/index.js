@@ -41,7 +41,9 @@ __export(entry_exports, {
   COLORS: () => COLORS,
   COLOR_SETS: () => COLOR_SETS,
   EMPTY: () => EMPTY,
+  IRON_FINISHES: () => IRON_FINISHES,
   LIBRARY: () => LIBRARY,
+  RAINBOW_COLORS: () => RAINBOW_COLORS,
   UndoStack: () => UndoStack,
   base64ToCells: () => base64ToCells,
   cellsToBase64: () => cellsToBase64,
@@ -51,6 +53,7 @@ __export(entry_exports, {
   createProjectFile: () => createProjectFile,
   diffSnapshot: () => diffSnapshot,
   estimateCost: () => estimateCost,
+  finishById: () => finishById,
   fitToColorSet: () => fitToColorSet,
   groupedColors: () => groupedColors,
   inkOn: () => inkOn,
@@ -61,6 +64,7 @@ __export(entry_exports, {
   physicalInfo: () => physicalInfo,
   printLayout: () => printLayout,
   quantizeImage: () => quantizeImage,
+  sparkleAt: () => sparkleAt,
   totalBeads: () => totalBeads
 });
 module.exports = __toCommonJS(entry_exports);
@@ -757,6 +761,7 @@ function createProjectFile(grid, meta) {
     cells: cellsToBase64(grid.data),
     done: meta.done ? doneToBase64(meta.done) : void 0,
     pricePerBead: meta.pricePerBead,
+    finish: meta.finish,
     createdAt: (_a = meta.createdAt) != null ? _a : now,
     updatedAt: now
   };
@@ -778,6 +783,7 @@ function parseProjectFile(raw) {
     name: doc.name || "未命名图纸",
     id: doc.id || crypto.randomUUID(),
     pricePerBead: (_a = doc.pricePerBead) != null ? _a : 0.03,
+    finish: typeof doc.finish === "string" ? doc.finish : null,
     createdAt: (_b = doc.createdAt) != null ? _b : Date.now(),
     updatedAt: (_c = doc.updatedAt) != null ? _c : Date.now()
   };
@@ -1349,3 +1355,104 @@ function quantizeImage(source, options) {
   const used = [...counts.entries()].map(([id, count]) => ({ id, count })).sort((a, b) => b.count - a.count);
   return { data: out, used };
 }
+
+// src/core/iron.ts
+var IRON_FINISHES = [
+  {
+    id: "raw",
+    name: "未烫成品",
+    desc: "圆珠带孔，看得出每一颗豆子的样子",
+    ironed: false,
+    sparkle: 0,
+    rainbow: false,
+    flatten: 1,
+    roughness: 0.42
+  },
+  {
+    id: "cloth",
+    name: "布烫",
+    desc: "隔着棉布轻压，表面哑光，豆孔变浅",
+    ironed: true,
+    sparkle: 0,
+    rainbow: false,
+    flatten: 0.72,
+    roughness: 0.78
+  },
+  {
+    id: "baking",
+    name: "烤纸烫",
+    desc: "烘焙纸压得最平，豆孔几乎合上",
+    ironed: true,
+    sparkle: 0,
+    rainbow: false,
+    flatten: 0.55,
+    roughness: 0.62
+  },
+  {
+    id: "coarse",
+    name: "粗闪",
+    desc: "大颗粒闪粉，灯下星星点点",
+    ironed: true,
+    sparkle: 0.08,
+    rainbow: false,
+    flatten: 0.62,
+    roughness: 0.5
+  },
+  {
+    id: "fine",
+    name: "细闪",
+    desc: "细密闪粉，整体微微发亮",
+    ironed: true,
+    sparkle: 0.2,
+    rainbow: false,
+    flatten: 0.62,
+    roughness: 0.45
+  },
+  {
+    id: "rainbowCoarse",
+    name: "彩虹粗闪",
+    desc: "闪粉带七彩反光，颗粒偏大",
+    ironed: true,
+    sparkle: 0.1,
+    rainbow: true,
+    flatten: 0.6,
+    roughness: 0.42
+  },
+  {
+    id: "rainbowFine",
+    name: "彩虹细闪",
+    desc: "七彩细闪铺满，最亮的一种",
+    ironed: true,
+    sparkle: 0.24,
+    rainbow: true,
+    flatten: 0.6,
+    roughness: 0.4
+  }
+];
+function finishById(id) {
+  var _a;
+  return (_a = IRON_FINISHES.find((f) => f.id === id)) != null ? _a : IRON_FINISHES[0];
+}
+function cellHash(x, y) {
+  let h = Math.imul(x + 40503, 2246822507) ^ Math.imul(y + 31161, 3266489909);
+  h ^= h >>> 15;
+  h = Math.imul(h, 625341585);
+  h ^= h >>> 13;
+  return (h >>> 0) / 4294967296;
+}
+function sparkleAt(x, y, finish) {
+  const none = { on: false, px: 0.5, py: 0.5, size: 0, hue: 0 };
+  if (finish.sparkle <= 0) return none;
+  const h1 = cellHash(x, y);
+  if (h1 >= finish.sparkle) return none;
+  const h2 = cellHash(y + 17, x + 31);
+  const h3 = cellHash(x + 101, y + 7);
+  return {
+    on: true,
+    px: 0.22 + h2 * 0.56,
+    py: 0.22 + h3 * 0.56,
+    size: 0.12 + cellHash(x + 5, y + 5) * 0.16,
+    hue: Math.floor(cellHash(x + 3, y + 9) * 6)
+  };
+}
+var RAINBOW_COLORS = ["#FF8FA3", "#FFC978", "#FFF1A8", "#A8E0C0", "#A8C8F0", "#D0B3F0"];
