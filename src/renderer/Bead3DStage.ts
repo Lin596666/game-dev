@@ -47,6 +47,8 @@ export class Bead3DStage {
   private disposed = false
   /** InstancedMesh 预先开好的实例上限，图纸尺寸变了才重建 */
   private capacity = 0
+  /** 熨烫模式：珠子被压扁，看起来像成品 */
+  private ironed = false
   private keyLight!: THREE.DirectionalLight
 
   constructor(host: HTMLElement, cb: Stage3DCallbacks = {}) {
@@ -251,7 +253,12 @@ export class Bead3DStage {
       for (let x = 0; x < g.width; x++) {
         const id = g.data[y * g.width + x]
         if (!id) continue
-        this.dummy.position.set(x - g.width / 2 + 0.5, BEAD_H / 2, y - g.height / 2 + 0.5)
+        this.dummy.position.set(
+          x - g.width / 2 + 0.5,
+          this.ironed ? (BEAD_H * 0.3) / 2 : BEAD_H / 2,
+          y - g.height / 2 + 0.5
+        )
+        this.dummy.scale.set(1, this.ironed ? 0.3 : 1, 1)
         this.dummy.updateMatrix()
         beads.setMatrixAt(n, this.dummy.matrix)
         beads.setColorAt(n, this.colorOf(id))
@@ -302,7 +309,8 @@ export class Bead3DStage {
     const cell = this.pickCell(ev.clientX, ev.clientY)
     if (cell) {
       this.hover.visible = true
-      this.hover.position.set(cell.x - this.grid!.width / 2 + 0.5, BEAD_H + 0.02, cell.y - this.grid!.height / 2 + 0.5)
+      this.hover.position.x = cell.x - this.grid!.width / 2 + 0.5
+      this.hover.position.z = cell.y - this.grid!.height / 2 + 0.5
     } else {
       this.hover.visible = false
     }
@@ -322,6 +330,16 @@ export class Bead3DStage {
 
   setAutoRotate(on: boolean): void {
     this.controls.autoRotate = on
+  }
+
+  /** 熨烫：把珠子压扁、磨砂一点，看成品效果 */
+  setIroned(on: boolean): void {
+    if (this.ironed === on) return
+    this.ironed = on
+    this.material.roughness = on ? 0.66 : 0.42
+    this.material.metalness = on ? 0 : 0.02
+    this.hover.position.y = (on ? BEAD_H * 0.3 : BEAD_H) + 0.02
+    this.rebuildBeads()
   }
 
   resetView(): void {

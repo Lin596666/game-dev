@@ -142,6 +142,10 @@ function applyFit(): void {
           <input type="checkbox" :checked="store.showNumbers" />
           显示色号（放大后可见）
         </label>
+        <label class="usage-item" style="cursor: pointer" @click.prevent="store.setSoundOn(!store.soundOn)">
+          <input type="checkbox" :checked="store.soundOn" />
+          珠子落盘的声音
+        </label>
       </div>
 
       <div class="panel-section">
@@ -248,6 +252,10 @@ function applyFit(): void {
         <div class="progress-bar"><i :style="{ width: pct + '%' }" /></div>
         <div class="stat-row">
           <span>已完成</span><b>{{ store.doneCount }} / {{ store.total }} 颗</b>
+        </div>
+        <div class="stat-row">
+          <span>这次拼了</span>
+          <b>{{ store.sessionMinutes }} 分钟</b>
         </div>
         <label class="usage-item" style="cursor: pointer; margin-top: 6px" @click.prevent="store.guideMode = !store.guideMode">
           <input type="checkbox" :checked="store.guideMode" />

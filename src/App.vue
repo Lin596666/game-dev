@@ -153,6 +153,7 @@ function onKey(e: KeyboardEvent): void {
 
 onMounted(async () => {
   window.addEventListener('keydown', onKey)
+  store.startClock()
   void store.ensurePersist()
   const list = await store.listAll()
   if (list.length > 0) {
@@ -162,6 +163,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKey)
+  store.stopClock()
 })
 </script>
 

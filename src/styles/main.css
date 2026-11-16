@@ -1084,3 +1084,276 @@ canvas,
   }
 }
 
+/* ===========================================================
+   细节打磨：纸感、层级、手感
+   全部是"叠加式"覆盖，不改上面的布局骨架
+   =========================================================== */
+
+/* 顶栏：一层很薄的纸反差，和画布区分开 */
+.topbar {
+  background: linear-gradient(180deg, #fffdf9 0%, var(--paper) 100%);
+  box-shadow: 0 1px 0 rgba(74, 60, 46, 0.05), 0 2px 12px rgba(74, 60, 46, 0.035);
+  position: relative;
+  z-index: 5;
+}
+
+.brand {
+  letter-spacing: 0.14em;
+}
+
+.brand-mark {
+  filter: drop-shadow(0 1px 1.5px rgba(74, 60, 46, 0.16));
+}
+
+/* 按钮：轻抬 + 按下回落，一点点"手感" */
+.btn {
+  border-radius: 11px;
+  transition:
+    background 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.12s ease;
+}
+
+.btn:hover:not(:disabled) {
+  box-shadow: 0 2px 8px rgba(74, 60, 46, 0.08);
+  transform: translateY(-1px);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.btn.primary {
+  background: linear-gradient(180deg, #47403a 0%, #332f29 100%);
+  border-color: #332f29;
+}
+
+.btn.primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, #524a43 0%, #3b3630 100%);
+}
+
+.btn.ghost:hover:not(:disabled) {
+  box-shadow: none;
+}
+
+/* 焦点可见：键盘用户也能看清现在在哪 */
+:focus-visible {
+  outline: 2px solid var(--sakura);
+  outline-offset: 2px;
+}
+
+/* 面板小标题：前面一颗豆子般的点，标题字距拉开 */
+.panel-section {
+  padding: 14px 16px;
+}
+
+.panel-title {
+  font-size: 12.5px;
+  letter-spacing: 0.16em;
+  color: var(--ink-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.panel-title::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--sakura);
+  opacity: 0.85;
+}
+
+/* 分段控件：滑动的白块 */
+.seg {
+  border-radius: 10px;
+}
+
+.seg button {
+  transition: color 0.16s ease;
+}
+
+.seg button:hover {
+  color: var(--ink);
+}
+
+.seg button.on {
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(74, 60, 46, 0.1);
+}
+
+/* 色板圆点：悬停微浮起，选中多一圈留白 */
+.swatch {
+  transition: transform 0.14s ease, box-shadow 0.14s ease;
+}
+
+.swatch:hover {
+  transform: translateY(-1px) scale(1.06);
+}
+
+.swatch.on {
+  box-shadow:
+    0 0 0 2px var(--paper-2),
+    0 0 0 4px var(--ink),
+    inset 0 -1.5px 3px rgba(0, 0, 0, 0.12);
+}
+
+/* 工具按钮：选中的那颗豆子会"陷"进去一点 */
+.tool.active {
+  box-shadow:
+    inset 0 1px 3px rgba(0, 0, 0, 0.18),
+    0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+/* 统计行：上下用极浅的分隔线串起来 */
+.stat-row + .stat-row {
+  border-top: 1px dashed rgba(74, 60, 46, 0.1);
+}
+
+.summary-item,
+.usage-item {
+  transition: background 0.15s ease;
+}
+
+/* 画布：四周一层很淡的暗角，视线更集中 */
+.stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 0 70px rgba(74, 60, 46, 0.055);
+}
+
+/* 空画布引导 */
+.stage-empty {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+  padding: 18px 22px;
+  max-width: 300px;
+}
+
+.stage-empty-mark {
+  display: block;
+  font-size: 30px;
+  line-height: 1;
+  color: var(--line-strong);
+  margin-bottom: 6px;
+}
+
+.stage-empty-title {
+  margin: 0 0 6px;
+  font-family: var(--serif);
+  font-size: 16px;
+  letter-spacing: 0.1em;
+  color: var(--ink-2);
+}
+
+.stage-empty-text {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.9;
+  color: var(--ink-3);
+}
+
+/* 弹层：从下方轻轻浮上来 */
+.overlay {
+  animation: overlay-in 0.18s ease-out;
+}
+
+.sheet {
+  animation: sheet-in 0.26s cubic-bezier(0.22, 0.9, 0.3, 1);
+}
+
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* 作品卡 / 图纸卡：小幅上浮 */
+.project-card,
+.lib-card {
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+
+.project-card:hover,
+.lib-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+/* 滚动条：细一点、和纸色同族 */
+.side-panel,
+.sheet-body,
+.rail {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+.side-panel::-webkit-scrollbar,
+.sheet-body::-webkit-scrollbar,
+.rail::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.side-panel::-webkit-scrollbar-thumb,
+.sheet-body::-webkit-scrollbar-thumb,
+.rail::-webkit-scrollbar-thumb {
+  background: rgba(74, 60, 46, 0.16);
+  border-radius: 999px;
+}
+
+.side-panel::-webkit-scrollbar-track,
+.sheet-body::-webkit-scrollbar-track,
+.rail::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* 提示条 */
+.toast {
+  animation: toast-in 0.2s ease-out;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+

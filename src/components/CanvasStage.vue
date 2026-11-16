@@ -383,6 +383,14 @@ watch(
       @contextmenu="onContextMenu"
     />
     <div class="stage-hint">{{ hint }}</div>
+    <div v-if="store.total === 0" class="stage-empty">
+      <span class="stage-empty-mark">◦</span>
+      <p class="stage-empty-title">还空着呢</p>
+      <p class="stage-empty-text">
+        左边挑一颗颜色，在格子上点一下就能放豆子。<br />
+        想照着画，去「图纸库」挑张现成的。
+      </p>
+    </div>
     <div class="stage-pill">
       <button class="btn ghost icon" title="缩小" @click="zoomOut">−</button>
       <span class="zoom-label">{{ zoomPct }}%</span>

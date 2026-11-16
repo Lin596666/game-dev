@@ -7,6 +7,7 @@ import { fitToColorSet, type FitResult } from '@/core/palette'
 import { colorUsage, estimateCost } from '@/core/pattern'
 import { gridPhysicalInfo } from '@/core/physical'
 import { stockReport, type StockMap } from '@/core/stock'
+import { playBeadTick, playChime } from '@/core/sound'
 import { createProjectFile, parseProjectFile, type ParsedProject } from '@/core/project'
 import { renderThumbnail } from '@/renderer/export'
 import {
@@ -101,6 +102,59 @@ export const useEditorStore = defineStore('editor', () => {
   const cost = computed(() => estimateCost(total.value, pricePerBead.value))
   /** 成品尺寸、豆板数、打印页数（跟实物有关，不跟颜色用量有关） */
   const physical = computed(() => gridPhysicalInfo(grid.value))
+
+  // ---------- 声音（合成音，不占体积；存在本地，默认开） ----------
+  const SOUND_KEY = 'bead:sound'
+  const soundOn = ref<boolean>(loadFlag(SOUND_KEY, true))
+
+  function loadFlag(key: string, fallback: boolean): boolean {
+    try {
+      const raw = localStorage.getItem(key)
+      return raw === null ? fallback : raw === '1'
+    } catch {
+      return fallback
+    }
+  }
+
+  function setSoundOn(on: boolean): void {
+    soundOn.value = on
+    try {
+      localStorage.setItem(SOUND_KEY, on ? '1' : '0')
+    } catch {
+      /* 存不了就算了 */
+    }
+  }
+
+  function tick(): void {
+    if (soundOn.value) playBeadTick()
+  }
+
+  // ---------- 专注计时（这一轮坐下来拼了多久） ----------
+  const sessionStart = ref(Date.now())
+  const clockTick = ref(Date.now())
+  let clockTimer: ReturnType<typeof setInterval> | null = null
+
+  function startClock(): void {
+    if (clockTimer) return
+    clockTick.value = Date.now()
+    // 20 秒刷一次就够：界面上只显示到"分钟"
+    clockTimer = setInterval(() => (clockTick.value = Date.now()), 20000)
+  }
+
+  function stopClock(): void {
+    if (!clockTimer) return
+    clearInterval(clockTimer)
+    clockTimer = null
+  }
+
+  const sessionMinutes = computed(() =>
+    Math.max(0, Math.floor((clockTick.value - sessionStart.value) / 60000))
+  )
+
+  function resetSession(): void {
+    sessionStart.value = Date.now()
+    clockTick.value = Date.now()
+  }
 
   // ---------- 豆子库存（手上有多少颗，用来算还缺什么） ----------
   const STOCK_KEY = 'bead:stock'
@@ -344,6 +398,7 @@ export const useEditorStore = defineStore('editor', () => {
       if (brushSize.value <= 1) grid.value.set(px, py, color)
       else grid.value.setFat(px, py, color, brushSize.value)
     })
+    tick()
     bump()
   }
 
@@ -352,6 +407,7 @@ export const useEditorStore = defineStore('editor', () => {
       if (brushSize.value <= 1) grid.value.set(px, py, EMPTY)
       else grid.value.setFat(px, py, EMPTY, brushSize.value)
     })
+    tick()
     bump()
   }
 
@@ -595,6 +651,11 @@ export const useEditorStore = defineStore('editor', () => {
     if (done[i] === (value ? 1 : 0)) return
     done[i] = value ? 1 : 0
     doneVersion.value++
+    if (value) {
+      tick()
+      const remaining = guideRemaining.value
+      if (remaining === 0 && soundOn.value) playChime()
+    }
     dirty.value = true
     scheduleSave()
   }
@@ -672,6 +733,12 @@ export const useEditorStore = defineStore('editor', () => {
     stock,
     setStock,
     stockInfo,
+    soundOn,
+    setSoundOn,
+    sessionMinutes,
+    resetSession,
+    startClock,
+    stopClock,
     canUndo,
     canRedo,
     currentColor,

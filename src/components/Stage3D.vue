@@ -9,6 +9,7 @@ const store = useEditorStore()
 const host = ref<HTMLDivElement | null>(null)
 const hoverCell = ref<{ x: number; y: number } | null>(null)
 const autoRotate = ref(false)
+const ironed = ref(false)
 const failed = ref('')
 const beadCount = ref(0)
 
@@ -75,6 +76,7 @@ watch(
 )
 
 watch(autoRotate, (on) => stage?.setAutoRotate(on))
+watch(ironed, (on) => stage?.setIroned(on))
 
 onBeforeUnmount(() => {
   stage?.dispose()
@@ -108,6 +110,14 @@ function hoverColorName(): string {
     </div>
 
     <div class="stage-pill floor">
+      <button
+        class="btn sm"
+        :class="{ primary: ironed }"
+        title="把珠子压扁，看熨烫后的成品"
+        @click="ironed = !ironed"
+      >
+        {{ ironed ? '熨烫中' : '熨烫' }}
+      </button>
       <button class="btn sm" title="回到正面视角" @click="stage?.resetView()">正视角</button>
       <button
         class="btn sm"
