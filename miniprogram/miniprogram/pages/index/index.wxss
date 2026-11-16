@@ -152,3 +152,32 @@
   padding: 20rpx 8rpx;
   text-align: center;
 }
+
+.tabs {
+  display: flex;
+  gap: 12rpx;
+}
+.tab {
+  font-size: 24rpx;
+  color: #9a9086;
+  padding: 4rpx 16rpx;
+  border-radius: 999rpx;
+  background: #f6f0e7;
+}
+.tab.on {
+  color: #fff;
+  background: #3a342e;
+}
+.work {
+  position: relative;
+}
+.star {
+  position: absolute;
+  right: 12rpx;
+  top: 12rpx;
+  font-size: 30rpx;
+  color: #9a9086;
+}
+.star.on {
+  color: #e0a33b;
+}

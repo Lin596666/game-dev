@@ -538,6 +538,9 @@ Page({
       finish: this.data.finishId,
       createdAt: this.createdAt
     })
+    // 收藏状态属于"作品册"这一层，编辑器保存时别把它清掉
+    const prev = db.find(this.docId)
+    if (prev && prev.starred) rec.starred = true
     db.save(rec)
   },
 

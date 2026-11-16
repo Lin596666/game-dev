@@ -7,16 +7,21 @@
   <view class="section">
     <view class="sec-head">
       <text class="sec-title">我的作品</text>
-      <text class="hint">{{works.length}} 张</text>
+      <view class="tabs">
+        <text class="tab {{starredOnly ? '' : 'on'}}" bindtap="toggleStarredOnly">全部</text>
+        <text class="tab {{starredOnly ? 'on' : ''}}" bindtap="toggleStarredOnly">收藏 {{starCount}}</text>
+      </view>
     </view>
     <view wx:if="{{works.length}}" class="works">
       <view class="work" wx:for="{{works}}" wx:key="id" bindtap="openWork" data-id="{{item.id}}">
         <view class="badge">{{item.size}}</view>
+        <text class="star {{item.starred ? 'on' : ''}}" catchtap="toggleStar" data-id="{{item.id}}">{{item.starred ? '★' : '☆'}}</text>
         <text class="w-name">{{item.name}}</text>
         <text class="hint">{{item.time}}</text>
         <text class="del" catchtap="deleteWork" data-id="{{item.id}}">删除</text>
       </view>
     </view>
+    <view wx:elif="{{starredOnly}}" class="empty">还没有收藏的作品，点作品右上角的 ☆ 收起来</view>
     <view wx:else class="empty">还没有作品，从下面挑一张图纸开始吧</view>
   </view>
 

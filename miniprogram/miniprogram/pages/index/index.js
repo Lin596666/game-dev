@@ -11,6 +11,8 @@ function timeText(ts) {
 Page({
   data: {
     works: [],
+    starredOnly: false,
+    starCount: 0,
     library: core.LIBRARY.map((p) => ({ id: p.id, name: p.name, desc: p.desc, size: `${p.size}×${p.size}` })),
     sizes: [29, 48, 58, 72, 96]
   },
@@ -20,13 +22,27 @@ Page({
   },
 
   refresh() {
-    const works = db.list().map((p) => ({
+    const all = db.list()
+    const starCount = all.filter((p) => p.starred).length
+    const rows = this.data.starredOnly ? all.filter((p) => p.starred) : all
+    const works = rows.map((p) => ({
       id: p.id,
       name: p.name || '未命名',
       size: `${p.width}×${p.height}`,
-      time: timeText(p.updatedAt)
+      time: timeText(p.updatedAt),
+      starred: !!p.starred
     }))
-    this.setData({ works })
+    this.setData({ works, starCount })
+  },
+
+  toggleStar(e) {
+    db.toggleStar(e.currentTarget.dataset.id)
+    this.refresh()
+  },
+
+  toggleStarredOnly() {
+    this.setData({ starredOnly: !this.data.starredOnly })
+    this.refresh()
   },
 
   openWork(e) {

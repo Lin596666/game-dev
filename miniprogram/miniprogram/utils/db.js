@@ -49,4 +49,12 @@ function clear() {
   wx.removeStorageSync(KEY)
 }
 
+function toggleStar(id) {
+  const rec = find(id)
+  if (!rec) return false
+  rec.starred = !rec.starred
+  save(rec)
+  return rec.starred
+}
+
 module.exports = { list, find, save, remove, clear }
