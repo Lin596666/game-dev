@@ -1876,3 +1876,40 @@ canvas,
     padding: 24px 14px 22px;
   }
 }
+
+/* 作品墙筛选与单张分享 */
+.wall-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.wall-filters .mini-select {
+  width: auto;
+  min-width: 108px;
+}
+.wall-msg {
+  margin: -4px 0 10px;
+  color: var(--clay);
+}
+.piece-share {
+  width: 100%;
+  margin-top: 6px;
+  padding: 4px 0;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: #fffdf8;
+  color: var(--ink-2);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.piece-share:hover {
+  border-color: var(--sakura);
+  color: var(--ink);
+}
+.piece-share:disabled {
+  opacity: 0.55;
+  cursor: default;
+}

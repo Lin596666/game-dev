@@ -366,6 +366,131 @@ export function renderShareCard(grid: BeadGrid, options: ShareCardOptions): Shar
   return { canvas, width: W, height: H }
 }
 
+/**
+ * 挂墙效果图：把作品装进木框，挂在墙上拍一张「成品照」。
+ * 用来分享"我真的把它做出来了"这件事，比纯图纸更有成就感。
+ */
+export function renderWallShot(grid: BeadGrid, options: ShareCardOptions): ShareCardResult {
+  const W = 1080
+  const H = 1350
+  const canvas = document.createElement('canvas')
+  canvas.width = W
+  canvas.height = H
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('导出失败：无法创建画布')
+
+  // 墙：暖米色 + 木纹横条
+  const wall = ctx.createLinearGradient(0, 0, 0, H)
+  wall.addColorStop(0, '#F4EADB')
+  wall.addColorStop(0.55, '#EBDFCB')
+  wall.addColorStop(1, '#E1D2B9')
+  ctx.fillStyle = wall
+  ctx.fillRect(0, 0, W, H)
+  for (let y = 0; y < H; y += 132) {
+    ctx.fillStyle = 'rgba(150, 122, 86, 0.06)'
+    ctx.fillRect(0, y, W, 3)
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.35)'
+    ctx.fillRect(0, y + 3, W, 2)
+  }
+  const light = ctx.createRadialGradient(W * 0.5, 180, 60, W * 0.5, 180, 780)
+  light.addColorStop(0, 'rgba(255, 250, 238, 0.75)')
+  light.addColorStop(1, 'rgba(255, 250, 238, 0)')
+  ctx.fillStyle = light
+  ctx.fillRect(0, 0, W, H)
+
+  // 内容尺寸
+  const c = cropBounds(grid)
+  const inner = 700
+  const px = Math.max(2, Math.floor(inner / Math.max(c.w, c.h)))
+  const artW = c.w * px
+  const artH = c.h * px
+  const artX = Math.round((W - artW) / 2)
+  const artY = Math.round(300 + (inner - artH) / 2)
+
+  const framePad = 40
+  const frameX = artX - framePad
+  const frameY = artY - framePad
+  const frameW = artW + framePad * 2
+  const frameH = artH + framePad * 2
+
+  ctx.save()
+  ctx.shadowColor = 'rgba(96, 74, 48, 0.35)'
+  ctx.shadowBlur = 46
+  ctx.shadowOffsetY = 20
+  ctx.fillStyle = '#C8A277'
+  roundRect(ctx, frameX, frameY, frameW, frameH, 8)
+  ctx.fill()
+  ctx.restore()
+
+  // 木框：斜向渐变 + 内倒角
+  const wood = ctx.createLinearGradient(frameX, frameY, frameX + frameW, frameY + frameH)
+  wood.addColorStop(0, '#D8B78F')
+  wood.addColorStop(0.45, '#C29A6C')
+  wood.addColorStop(1, '#A97F53')
+  ctx.fillStyle = wood
+  roundRect(ctx, frameX, frameY, frameW, frameH, 8)
+  ctx.fill()
+  ctx.strokeStyle = 'rgba(255, 250, 240, 0.5)'
+  ctx.lineWidth = 3
+  roundRect(ctx, frameX + 4, frameY + 4, frameW - 8, frameH - 8, 6)
+  ctx.stroke()
+
+  // 卡纸
+  ctx.fillStyle = '#FFFDF8'
+  ctx.fillRect(artX - 14, artY - 14, artW + 28, artH + 28)
+
+  // 作品
+  for (let y = 0; y < c.h; y++) {
+    for (let x = 0; x < c.w; x++) {
+      const id = grid.get(c.x + x, c.y + y)
+      if (id === EMPTY) continue
+      const color = colorById(id)
+      if (!color) continue
+      ctx.fillStyle = color.hex
+      ctx.fillRect(artX + x * px, artY + y * px, px, px)
+    }
+  }
+
+  // 玻璃反光
+  const glass = ctx.createLinearGradient(artX, artY, artX + artW * 0.7, artY + artH)
+  glass.addColorStop(0, 'rgba(255, 255, 255, 0.22)')
+  glass.addColorStop(0.35, 'rgba(255, 255, 255, 0.04)')
+  glass.addColorStop(1, 'rgba(255, 255, 255, 0)')
+  ctx.fillStyle = glass
+  ctx.fillRect(artX, artY, artW, artH)
+
+  // 铜牌
+  const plateW = Math.min(520, Math.max(340, artW * 0.62))
+  const plateH = 104
+  const plateX = Math.round((W - plateW) / 2)
+  const plateY = frameY + frameH + 42
+  const brass = ctx.createLinearGradient(plateX, plateY, plateX, plateY + plateH)
+  brass.addColorStop(0, '#E7D2A8')
+  brass.addColorStop(1, '#CFB181')
+  ctx.fillStyle = brass
+  roundRect(ctx, plateX, plateY, plateW, plateH, 10)
+  ctx.fill()
+  ctx.strokeStyle = 'rgba(120, 96, 62, 0.35)'
+  ctx.lineWidth = 2
+  ctx.stroke()
+
+  ctx.textAlign = 'center'
+  ctx.fillStyle = '#4A3B2A'
+  ctx.font = '600 40px "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif SC", serif'
+  ctx.fillText(options.name || '拼豆作品', W / 2, plateY + 50)
+  const bits = [options.width + '×' + options.height, options.beads + ' 颗']
+  if (options.finishName) bits.push(options.finishName)
+  ctx.fillStyle = 'rgba(74, 59, 42, 0.72)'
+  ctx.font = '400 24px "PingFang SC", "Microsoft YaHei", sans-serif'
+  ctx.fillText(bits.join(' · '), W / 2, plateY + 84)
+
+  ctx.fillStyle = 'rgba(106, 92, 72, 0.55)'
+  ctx.font = '400 24px "PingFang SC", "Microsoft YaHei", sans-serif'
+  ctx.fillText('拼豆工房 · Bead Atelier', W / 2, H - 64)
+
+  return { canvas, width: W, height: H }
+}
+
 function roundRect(
   ctx: CanvasRenderingContext2D,
   x: number,

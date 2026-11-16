@@ -7,7 +7,8 @@ import {
   downloadBlob,
   downloadText,
   renderPng,
-  renderShareCard
+  renderShareCard,
+  renderWallShot
 } from '@/renderer/export'
 import Modal from './Modal.vue'
 
@@ -63,6 +64,26 @@ async function exportCard(): Promise<void> {
     message.value = '分享卡片已下载（1080×1350）'
   } catch (err) {
     message.value = err instanceof Error ? err.message : '生成分享卡失败'
+  } finally {
+    busy.value = false
+  }
+}
+
+async function exportWall(): Promise<void> {
+  busy.value = true
+  try {
+    const { canvas } = renderWallShot(store.grid, {
+      name: store.docName || '拼豆作品',
+      beads: store.total,
+      width: store.grid.width,
+      height: store.grid.height,
+      finishName: store.finish === 'raw' ? '' : store.finishInfo.name
+    })
+    const blob = await canvasToBlob(canvas)
+    downloadBlob(blob, safeName.value + '-挂墙效果.png')
+    message.value = '挂墙效果图已下载（1080×1350）'
+  } catch (err) {
+    message.value = err instanceof Error ? err.message : '生成挂墙效果图失败'
   } finally {
     busy.value = false
   }
@@ -160,6 +181,7 @@ async function saveNow(): Promise<void> {
     <template #footer>
       <button class="btn" @click="emit('close')">关闭</button>
       <button class="btn" @click="exportCard">分享卡片</button>
+      <button class="btn" @click="exportWall">挂墙效果图</button>
       <button class="btn" @click="exportList">色号清单</button>
       <button class="btn" @click="exportProject">工程文件</button>
       <button class="btn" @click="saveNow">保存到本机</button>
